@@ -14,8 +14,11 @@ def main():
     }, s))
 
     # Just to consume iterator
-    for val in outputs:
-        print(val)
+    for i, val in enumerate(outputs):
+        if val is not None:
+            print(i, val.after['name'], val.sources)
+        else:
+            print(i, None)
 
 
 # Press the green button in the gutter to run the script.

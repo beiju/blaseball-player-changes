@@ -24,6 +24,16 @@ class ChangeSourceType(Enum):
     # that adds a weekly mod (e.g. Unstable)
     HIT_BY_PITCH = auto()
 
+    # Is party!
+    PARTY = auto()
+
+    # Attributes were added that didn't used to exist. For example, star ratings
+    # in the Expansion era.
+    ADDED_ATTRIBUTES = auto()
+
+    # For some reason, the precision changed
+    PRECISION_CHANGE = auto()
+
 
 @dataclass
 class ChangeSource:
