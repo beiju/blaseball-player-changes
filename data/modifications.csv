@@ -1,0 +1,212 @@
+"modification_db_id","modification","color","text_color","background","title","description","modification_entity"
+1,"EXTRA_STRIKE","#f77c9f","#f77c9f","#8c1839","The Fourth Strike","Those with the Fourth Strike will get an extra strike in each at bat.",NULL
+2,"SHAME_PIT","#b96dbd","#b96dbd","#3d1539","Targeted Shame","Teams with Targeted Shame will start with negative runs the game after being shamed.",NULL
+3,"HOME_FIELD","#f9ff54","#f9ff54","#4f9c30","Home Field Advantage","Teams with Home Field Advantage will start each home game with one run.",NULL
+4,"FIREPROOF","#a5c5f0","#a5c5f0","#4c77b0","Fireproof","A Fireproof player can not be incinerated.",NULL
+5,"ALTERNATE","#fffd85","#fffd85","#404040","Alternate","This player is an Alternate...",NULL
+6,"SOUNDPROOF","#c92080","#c92080","#000000","Soundproof","A Soundproof player can not be caught in Feedback's reality flickers.",NULL
+7,"SHELLED","#fffd85","#fffd85","#404040","Shelled","A Shelled player is trapped in a big Peanut is unable to bat or pitch.",NULL
+8,"REVERBERATING","#61b3ff","#61b3ff","#756773","Reverberating","A Reverberating player has a small chance of batting again after each of their At-Bats end.",NULL
+9,"BLOOD_DONOR","#ff1f3c","#ff1f3c","#52050f","Blood Donor","In the Blood Bath, this team will donate Stars to a division opponent that finished behind them in the standings.",NULL
+10,"BLOOD_THIEF","#ff1f3c","#ff1f3c","#52050f","Blood Thief","In the Blood Bath, this team will steal Stars from a division opponent that finished ahead of them in the standings.",NULL
+11,"BLOOD_PITY","#ff1f3c","#ff1f3c","#52050f","Blood Pity","In the Blood Bath, this team must give Stars to the team that finished last in their division.",NULL
+12,"BLOOD_WINNER","#ff1f3c","#ff1f3c","#52050f","Blood Winner","In the Blood Bath, this team must give Stars to the team that finished first in their division.",NULL
+13,"BLOOD_FAITH","#ff1f3c","#ff1f3c","#52050f","Blood Faith","In the Blood Bath, this player will receive a small boost to a random stat.",NULL
+14,"BLOOD_LAW","#ff1f3c","#ff1f3c","#52050f","Blood Law","In the Blood Bath, this team will gain or lose Stars depending on how low or high they finish in their division.",NULL
+15,"BLOOD_CHAOS","#ff1f3c","#ff1f3c","#52050f","Blood Chaos","In the Blood Bath, each player on this team will gain or lose a random amount of Stars.",NULL
+16,"RETURNED","#fbff8a","#fbff8a","#1b1c80","Returned","This player has Returned from the void. At the end of each season, this player has a chance of being called back to the Void.",NULL
+17,"INVERTED","#d3d8de","#d3d8de","#38080d","Inverted","This player has Inverted.",NULL
+18,"MARKED","#eaabff","#eaabff","#1b1c80","Unstable","Unstable players have a much higher chance of being incinerated in a Solar Eclipse.",NULL
+19,"PARTY_TIME","#ff66f9","#ff66f9","#fff947","Party Time","This team is mathematically eliminated from the Postseason, and will occasionally receive permanent stats boost in their games.",NULL
+20,"LIFE_OF_PARTY","#fff45e","#fff45e","#9141ba","Life of the Party","This team gets 10% more from their Party Time stat boosts.",NULL
+21,"DEBT_ZERO","#ff1f3c","#ff1f3c","#1b1c80","Debt","This player must fulfill a debt.",NULL
+22,"DEBT","#ff1f3c","#ff1f3c","#363738","Refinanced Debt","This player must fulfill a debt.",NULL
+23,"DEBT_TWO","#ff1f3c","#ff1f3c","#612273","Consolidated Debt","This player must fulfill a debt.",NULL
+24,"SPICY","#9e0022","#9e0022","#d15700","Spicy","Spicy batters will be Red Hot when they get three consecutive hits.",NULL
+25,"HEATING_UP","#9e0022","#9e0022","#d15700","Heating Up...","This batter needs one more consecutive hit to enter Fire mode. This mod will disappear if the batter gets out.",NULL
+26,"ON_FIRE","#fff982","#fff982","#e32600","Red Hot!","Red Hot! This player's batting is greatly boosted. This mod will disappear if the batter gets out.",NULL
+27,"HONEY_ROASTED","#ffda75","#ffda75","#b5831f","Honey Roasted","This player has been Honey-Roasted.",NULL
+28,"FIRST_BORN","#fffea8","#fffea8","#517063","First Born","This player was the first born from the New Field of Eggs.",NULL
+29,"SUPERALLERGIC","#bd224e","#bd224e","#45003d","Superallergic","This player is Superallergic",NULL
+30,"SUPERYUMMY","#ffdb59","#ffdb59","#c96faa","Superyummy","This player seriously loves peanuts",NULL
+31,"EXTRA_BASE","#d9d9d9","#d9d9d9","#4a001a","Fifth Base","This team must run five bases instead of four in order to score.",NULL
+32,"BLESS_OFF","#e0cafa","#e0cafa","#7d58a8","Bless Off","This team cannot win any Blessings in the upcoming Election.",NULL
+33,"NON_IDOLIZED","#fffaba","#fffaba","#540e43","Idol Immune","Idol Immune players cannot be Idolized by Fans.",NULL
+34,"GRAVITY","#759bc9","#759bc9","#4c5052","Gravity","This player cannot be affected by Reverb.",NULL
+35,"ELECTRIC","#fff199","#fff199","#04144a","Electric","Electric teams have a chance of zapping away Strikes.",NULL
+36,"DOUBLE_PAYOUTS","#fffaba","#fffaba","#786600","Super Idol","This player will earn Fans double the rewards from all Idol Snacks.",NULL
+37,"FIRE_PROTECTOR","#c4ff85","#c4ff85","#1f474f","Fire Protector","This player will protect their team from incinerations.",NULL
+38,"RECEIVER","#ff007b","#ff007b","#383838","Receiver","This player is a Receiver.",NULL
+39,"FLICKERING","#ff007b","#ff007b","#383838","Flickering","Flickering players have a much higher chance of being Feedbacked to their opponent.",NULL
+40,"GROWTH","#52a17b","#52a17b","#13422b","Growth","Growth teams will play better as the season goes on, up to a 5% global boost by season's end.",NULL
+41,"BASE_INSTINCTS","#dedede","#dedede","#329c98","Base Instincts","Batters with Base Instincts will have a chance of heading past first base when getting walked.",NULL
+42,"STABLE","#91b5a3","#91b5a3","#335980","Stable","Stable players cannot be made Unstable.",NULL
+43,"AFFINITY_FOR_CROWS","#cb80d9","#cb80d9","#240c36","Affinity for Crows","Players with Affinity for Crows will hit and pitch 50% better during Birds weather.",NULL
+44,"CURSE_OF_CROWS","#915387","#915387","#3d2830","Curse of Crows","This team or player will be occasionally attacked by Birds.",NULL
+45,"SQUIDDISH","#5988ff","#5988ff","#163073","Squiddish","When a Squiddish player is incinerated, they'll be replaced by a random Hall of Flame player.",NULL
+46,"CRUNCHY","#f5eb5d","#f5eb5d","#de8123","Crunchy","The Honey-Roasted players on a Crunchy team will hit 100% better and with +200% Power.",NULL
+47,"PITY","#ffffff","#ffffff","#000000","Pity","This team is holding back, out of Pity.",NULL
+48,"GOD","#ff4d90","#ff4d90","#fffc57","God","This team will start with 1,000x the amount of Team Spirit",NULL
+49,"REPEATING","#61b3ff","#61b3ff","#3d5982","Repeating","In Reverb Weather, this player will Repeat.",NULL
+50,"SUBJECTION","#d16f6f","#d16f6f","#2e2f33","Subjection","Players leaving a team with Subjection will gain the Liberated modification.",NULL
+51,"LIBERATED","#90eb07","#90eb07","#07a1a3","Liberated","Liberated players will be guaranteed extra bases when they get a hit.",NULL
+52,"FIRE_EATER","#f50a31","#f50a31","#e3d514","Fire Eater","Fire Eaters swallow fire instead of being incinerated.",NULL
+53,"MAGMATIC","#e63200","#e63200","#6b0004","Magmatic","Magmatic players are guaranteed to hit a home run in their next At Bat.",NULL
+54,"LOYALTY","#ff61a5","#ff61a5","#2c1240","Loyalty","Players leaving a team with Loyalty will gain the Saboteur modification.",NULL
+55,"SABOTEUR","#6b6a6a","#6b6a6a","#240c36","Saboteur","A Saboteur has a chance of intentionally failing.",NULL
+56,"CREDIT_TO_THE_TEAM","#fffaba","#fffaba","#786600","Credit to the Team","This player will earn Fans 5x the rewards from all Idol Snacks.",NULL
+57,"LOVE","#ff2b6b","#ff2b6b","#732652","Charm","Players with Charm have a chance of convincing their opponents to fail.",NULL
+58,"PEANUT_RAIN","#fff199","#fff199","#04144a","Peanut Rain","This Team weaponizes Peanut weather against their enemies.",NULL
+59,"FLINCH","#219ccc","#219ccc","#5e5e5e","Flinch","Hitters with Flinch cannot swing until a strike has been thrown in the At Bat.",NULL
+60,"WILD","#219ccc","#219ccc","#361a57","Mild","Pitchers with Mild have a chance of throwing a Mild Pitch.",NULL
+61,"DESTRUCTION","#ff8a24","#ff8a24","#802d00","Destruction","Teams with Destruction will add a bunch of Curses to their Opponent when defeating them in battle.",NULL
+62,"SIPHON","#e30000","#e30000","#2b0000","Siphon","Siphons will steal blood more often in Blooddrain and use it in more ways.",NULL
+63,"FLIICKERRRIIING","#80fffb","#80fffb","#383838","Fliickerrriiing","Fliickerrriiing players are Flickering a lot.",NULL
+64,"FRIEND_OF_CROWS","#ff7ae7","#ff7ae7","#570026","Friend of Crows","In Birds weather, pitchers with Friend of Crows will encourage the Birds to attack hitters.",NULL
+65,"BLASERUNNING","#fffaa3","#fffaa3","#570026","Blaserunning","Blaserunners will score .2 Runs for their Team whenever they steal a base.",NULL
+66,"WALK_IN_THE_PARK","#faff9c","#faff9c","#275c2a","Walk in the Park","Those with Walk in the Park will walk to first base on one less Ball.",NULL
+67,"BIRD_SEED","#1e0036","#dca8f7","#dca8f7","Bird Seed","Birds like to eat Bird Seed. They'll peck those with Bird Seed out of peanut shells more often. Because they like to eat Bird Seed.",NULL
+68,"HAUNTED","#b59c9c","#b59c9c","#1c1c1c","Haunted","Haunted players will occasionally be Inhabited.",NULL
+69,"TRAVELING","#cfebff","#cfebff","#1c1c1c","Traveling","Traveling teams will play 5% better in Away games.",NULL
+70,"SEALANT","#eded91","#eded91","#571f26","Sealant","Players with Sealant cannot have blood drained in Blooddrain.",NULL
+71,"O_NO","#cffff0","#cffff0","#485099","0 No","Players with 0 No cannot be struck out when there are 0 Balls in the Count.",NULL
+72,"FAIRNESS","#12b300","#12b300","#ffdb0f","Total Fairness","This Season, each team will win only one Blessing, and will be Happy with what they get.",NULL
+73,"ESCAPE","#ffe521","#ffe521","#0d0d0d","Pending","The players on this Team are Pending...",NULL
+74,"UNFLAMED","#eaabff","#eaabff","#1b1c80","Chaotic","The Unstable players on a Chaotic team will hit 100% better.",NULL
+75,"TRIBUTE","#dbce6e","#dbce6e","#362803","Tribute","When Hall of Flame players join this team, they'll add their Tribute as Team Spirit.",NULL
+76,"SQUIDDEST","#e6eaeb","#e6eaeb","#163073","Squiddest","This Team is the Squiddest. When a player joins the Team, they'll become Squiddish.",NULL
+77,"CONTAINMENT","#91ab91","#91ab91","#023802","Containment","When an Unstable player on this team is incinerated, the Instability cannot chain to their opponent.",NULL
+78,"RETIRED","#d3ede5","#d3ede5","#000e33","Released","",NULL
+79,"RESTING","#5988ff","#5988ff","#163073","Resting","",NULL
+80,"INHABITING","#b59c9c","#b59c9c","#1c1c1c","Inhabiting","This player is temporarily Inhabiting a Haunted player.",NULL
+81,"WIRED","#511c00","#511c00","#ffffff","Wired","When a Run scores, each Wired player involved in the play (the Scoring Baserunner, Current Batter, or Current Pitcher) will make the Run worth 0.5 more.",NULL
+82,"TIRED","#ffffff","#ffffff","#511c00","Tired","When a Run scores, each Tired player involved in the play (the Scoring Baserunner, Current Batter, or Current Pitcher) with make the Run worth 0.5 less.",NULL
+83,"COFFEE_EXIT","#e9c4ff","#e9c4ff","#96afd4","Percolated","This player has been fully and completely Percolated.",NULL
+84,"COFFEE_SHADOWS","#f0efaa","#f0efaa","#031736","Well Rested","Whenever a player on this team loses the Tired modification, they'll swap with a player in the Shadows.",NULL
+85,"HARD_BOILED","#9a7b4f","#9a7b4f","#511c00","Hard Boiled","This player was boiled a little bit before hatching.",NULL
+86,"COFFEE_PERIL","#9a7b4f","#9a7b4f","#000000","Observed","This player is being Observed carefully...",NULL
+87,"COFFEE_RALLY","#2e1406","#fffcd9","#44c97c","Free Refill","Good for one Free Refill.",NULL
+88,"TRIPLE_THREAT","#cc527a","#cc527a","#5dbcd2","Triple Threat","This pitcher's strikeouts score Unruns when there are 3 runners on base, a runner on 3rd, or 3 Balls in the count. Each condition met is worth .3 Unruns. At the end of the 3rd Inning, there's a 33.33% chance that this mod will disappear.",NULL
+89,"PERK","#be4fff","#be4fff","#96afd4","Perk","This player has been rewarded Percolated energy. They will Overperform in all Coffee weathers.",NULL
+90,"OVERPERFORMING","#32b528","#32b528","#000000","Overperforming","This player will play 20% better than usual.",NULL
+91,"SHAME_GIVER","#ff005d","#ff005d","#3d1539","Shame Donor","When this team shames their opponent, that opponent will begin their next game with Unruns.",NULL
+92,"UNDERPERFORMING","#db3616","#db3616","#000000","Underperforming","This player will play 20% worse than usual.",NULL
+93,"EGO1","#d1c252","#d1c252","#383000","Ego+","This player has a boosted Ego.",NULL
+94,"EGO2","#d6c965","#d6c965","#5e5100","Ego++","This player has a boosted boosted Ego.",NULL
+95,"EGO3","#e3d77f","#e3d77f","#857300","Ego+++","This player has a boosted boosted boosted Ego.",NULL
+96,"EGO4","#f5eba2","#f5eba2","#a89200","Ego++++","This player has a boosted boosted boosted boosted Ego.",NULL
+97,"LEGENDARY","#fff8c7","#fff8c7","#bfa600","Legendary","This player is Legendary.",NULL
+98,"ELSEWHERE","#bdb3c3","#bdb3c3","#ffffff","Elsewhere","This player is Elsewhere. They'll find their own way back.",NULL
+99,"BOTTOM_DWELLER","#ffd7b0","#ffd7b0","#705336","Bottom Dweller","If this team finishes last in their division, they'll be boosted up to 5%.",NULL
+100,"CARCINIZATION","#ff4258","#ff4258","#38040a","Carcinization","When the Crabs activate the Black Hole, they will steal the other team's best hitter for the remainder of the game.",NULL
+101,"MAINTENANCE_MODE","#ffed63","#ffed63","#c25429","Maintenance Mode","Whenever a player on this team is Impaired, they'll receive the Fourth Out for the remainder of the game.",NULL
+102,"AMBUSH","#ff2160","#ff2160","#0c000f","Ambush","When a player is incinerated in a game this team is playing, a Hall of Flame player will join their Shadows.",NULL
+103,"UNDERSEA","#c2e1ff","#c2e1ff","#34516e","Undersea","If this team ever has negative Runs, they'll Overperform for the rest of the game.",NULL
+104,"PENANCE","#ca0000","#ca0000","#4a0000","Penance","This team will start each game by accepting 3 Unruns of penance.",NULL
+105,"EXTRA_OUT","#5ba3eb","#5ba3eb","#00254a","Fourth Out","This team plays with a Fourth Out.",NULL
+106,"STUCK","#b5bceb","#b5bceb","#5f1e61","Stuck","This player cannot swing.",NULL
+107,"SWIM_BLADDER","#fffd6e","#fffd6e","#0a6154","Flippers","When immateria floods, this Runner will score instead of being cleared from the Bases.",NULL
+108,"DEBT_THREE","#ff1f3c","#ff1f3c","#3b3217","Debt","This player must fulfill a Debt.",NULL
+109,"ECHO","#ffffff","#ffffff","#9c2c46","Echo","Echo Echo Echo Echo Echo Echo Echo Echo Echo Echo Echo Echo",NULL
+110,"STATIC","#ffffff","#ffffff","#302a2f","Static",".....",NULL
+111,"EARLBIRDS","#ffc2f9","#ffc2f9","#0a8ef5","Earlbirds","This Team or Player will Overperform in the Earlseason.",NULL
+112,"LATE_TO_PARTY","#addbff","#addbff","#700065","Late to the Party","This Team or Player will Overperform in the Lateseason.",NULL
+113,"OVERUNDER","#ffffff","#ffffff","#000000","Over Under","Whenever this pitcher's team has Over 5 Runs, they'll Underperform.",NULL
+114,"UNDEROVER","#ffffff","#ffffff","#000000","Under Over","Whenever this player's team has Under 5 Runs, they'll Overperform.",NULL
+115,"WANDERER","#fffeeb","#fffeeb","#3f1e57","Roamin'","This player has a chance of Roamin' to a new team at the end of each season.",NULL
+116,"SUPERWANDERER","#fcff54","#fcff54","#6b3c8c","Super Roamin'","This player has a high chance of Roamin' to a new team at the end of each season.",NULL
+117,"NEWADVENTURE","#caffc7","#caffc7","#007da3","On an Odyssey","This player is boosted 5% every team they join a team.",NULL
+118,"SINKING_SHIP","#78befb","#78befb","#00250d","Sinking Ship","This team plays 1% worse for every player above 14 players on their roster, and 1% better for every player below 14 on their roster.",NULL
+119,"PARASITE","#e30000","#e30000","#2b0000","Parasite","When this pitcher strikes out a batter in Blooddrain, they'll drain some blood from them.",NULL
+120,"DEFECTOR","#ffffff","#ffffff","#000000","Defector","",NULL
+121,"HOMEBODY","#8dadb5","#8dadb5","#032b12","Homebody","This player will Overperform when playing in their home Ballpark and Underperform otherwise.",NULL
+122,"KILLER_PIES","#ace8de","#ace8de","#3b524e","Flying Pie","Whenever this team has lost 3 games in a Row, their pitchers will start throwing Pies.",NULL
+123,"FRESH","#ffffff","#ffffff","#000000","Fresh","When a player joins this Team, they'll be boosted by 2%.",NULL
+124,"PARTING_GIFT","#ffffff","#ffffff","#000000","Parting Gift","When a player leaves this Team, they'll be boosted by 2%",NULL
+125,"BLOCKED_BOOST","#ffffff","#ffffff","#000000","Blocked Boost","If this player is protected from a Steal or Swap Will, they'll be boosted by 2%.",NULL
+126,"HALL_EXIT_BOOST","#ff943d","#ff943d","#163073","Phoenix","When this player exits the Hall of Flame, they'll be boosted 10% to 20%.",NULL
+127,"FLOOD_PUMPS","#41feff","#41feff","#465f63","Flood Pumps","Flood Pumps will prevent Flooding weather from making your Ballpark filthier.",NULL
+128,"POLAR_VORTEX","#ffffff","#ffffff","#000000","Polar Vortex","",NULL
+129,"SALMON_CANNONS","#ffb0c6","#ffb0c6","#2a292e","Salmon Cannons","Salmon Cannons have a chance of expelling pests from your Ballpark.",NULL
+130,"EVENT_HORIZON","#ec49ff","#ec49ff","#160626","Event Horizon","The Event Horizon will prevent the first Black Hole activation in each game, converting the Overflow to Unruns for your opponent's next game.",NULL
+131,"SOUNDSYSTEM","#4be397","#4be397","#330a2a","LCD Soundsystem","The LCD Soundsystem will boost both players involved in a Feedback swap by 5%.",NULL
+132,"ECHO_CHAMBER","#61b3ff","#61b3ff","#1f061b","Echo Chamber","In Reverb, Echo Chambers will occasionally provide Reverberating and Repeating modifications to players for game-long use.",NULL
+133,"FIRE_INSURANCE","#ff2e2e","#ff2e2e","#020324","Heat Magnet","The Heat Magnet will absorb heat from an incineration and pass it on to the Thermal Converter.",NULL
+134,"PEANUT_MISTER","#f3ff54","#f3ff54","#423519","Peanut Mister","A Peanut Mister will occasionally cure a player of their peanut allergy.",NULL
+135,"BLOOD_LUSTER","#ffffff","#ffffff","#000000","Blood Luster","",NULL
+136,"BIRDHOUSES","#d4ecff","#d4ecff","#0a8ef5","Birdhouses","Birdhouses invite Birds to come live in your Ballpark.",NULL
+137,"SWEETENER","#fffcad","#fffcad","#4a2f40","Sweetener","Sweetener makes Beanings & Free Refills more likely in Coffee & Coffee Two weathers, and lowers the chance of losing Triple Threat.",NULL
+138,"SECRET_BASE","#ffffff","#ffffff","#363335","Secret Base","The Secret Base is a hidden base beyond 2nd that allows a baserunner to hide between innings.",NULL
+139,"HOOPS","#ffffff","#ffffff","#000000","Hoops","",NULL
+140,"GRIND_RAIL","#a8a8a5","#a8a8a5","#43474a","Grind Rail","The Grind Rail allows a chance to steal directly from first base to third base, as long as they have the skills.",NULL
+141,"CASINO_ZONE","#ffffff","#ffffff","#000000","Casino Zone","777",NULL
+142,"CATAPULTS","#ffffff","#ffffff","#000000","Catapults","",NULL
+143,"BIG_BUCKET","#fffb82","#fffb82","#083a3b","Big Buckets","If a home run lands in a Big Bucket, it scores an extra Run.",NULL
+144,"SMALL_BUCKET","#ffe76b","#ffe76b","#673e00","Small Bucket","If a home run lands in a Small Bucket, it score 5 extra Runs.",NULL
+145,"BUMPERS","#ffffff","#ffffff","#000000","Bumpers","",NULL
+146,"BULLPEN","#ffffff","#ffffff","#000000","Bull Pen","",NULL
+147,"SEARCHLIGHTS","#ffffff","#ffffff","#000000","Searchlights","",NULL
+148,"SECRET_TUNNELS","#ffffff","#ffffff","#000000","Secret Tunnels","",NULL
+149,"SOLAR_PANELS","#fff896","#fff896","#b58004","Solar Panels","Solar Panels will prevent the first Sun 2 activation in each game, converting the Overflow to Runs for your Team's next game.",NULL
+150,"TEMP_STOLEN","#ffffff","#ffffff","#000000","Temp Stolen","This player has been temporarily stolen.",NULL
+151,"REDACTED","#ffffff","#ffffff","#000000","Redacted","This player is Redacted.",NULL
+152,"FUGITIVE","#ffffff","#ffffff","#000000","Fugitive","",NULL
+153,"BIG_RED_BUTTON","#ffffff","#ffffff","#000000","Supercharged","When this Team hits a Grand Slam, reset the number of Outs to zero.",NULL
+154,"BASE_DEALING","#d297f9","#a16dc3","#180027","Base Dealing","This Team's lineup will advance in reverse order.",NULL
+155,"SMOOTH","#8ae9ff","#8ae9ff","#423519","Smooth","This player will have 100% more Speed in Peanut weather.",NULL
+156,"CHUNKY","#ff9e08","#ff9e08","#423519","Chunky","This player will have 100% more Power in Peanut weather.",NULL
+157,"SUN_KISSED","#ffe100","#ffe100","#5c5d45","Sun Dialed","When this Team activates Sun 2, a random player on their Team will be boosted by 1%.",NULL
+158,"UNHOLEY","#ffffff","#ffffff","#863490","Unholey","When this Team activates the Black Hole, a random player on their opponent's Team will be impaired by 1%.",NULL
+159,"SUPERCHARGED","#e6ff21","#e6ff21","#84072a","Supercharged","This Team will play 10% better after scoring 10+ Runs the Day before.",NULL
+160,"HIGH_PRESSURE","#fff912","#fff912","#465f63","High Pressure","This Team or Player will play 25% better in Flooding weather when runners are on base.",NULL
+161,"SCATTERED","#bdb3c3","#bdb3c3","#ffffff","Scattered","This Player returned from Elsewhere a bit Scattered.",NULL
+162,"PATIENT","#b3ffa6","#b3ffa6","#2b304f","Patient","This batter will never swing when there are 0 Strikes and are 1 Ball away from a Walk.",NULL
+163,"HUNCH","#ffffff","#ffffff","#453e30","Hunch","This player has a Hunch.",NULL
+164,"UNCERTAIN","#d285ff","#d285ff","#ffffff","Uncertain","When this Player returns from Elsewhere, they'll be adjusted by -15% to +20%.",NULL
+165,"MUNCHIES","#ffffff","#ffffff","#000000","Munchies","",NULL
+166,"DOUBLE_DOG","#ffffff","#ffffff","#000000","Double-Dog","",NULL
+167,"BLACKHOLE_PAYOUTS","#ffffff","#ffffff","#863490","Jam-Packed","When this Team triggers the Black Hole, they'll earn double payouts for all Wet Pretzel holders.",NULL
+168,"SUN2_PAYOUTS","#ffe100","#ffe100","#5c5d45","Glazed","When this Team activates Sun 2, they'll earn double payouts for all Doughnut holders.",NULL
+169,"POPCORN_PAYOUTS","#fff8bd","#fff8bd","#d4223a","Buttered Up","This Team earns double payouts on Popcorn.",NULL
+170,"STALEPOPCORN_PAYOUTS","#bababa","#bababa","#7a0000","Over Salted","This Team earns double payouts on Stale Popcorn.",NULL
+171,"MAXIMALIST","#29ffd1","#29ffd1","#007a87","Maximalist","This Player plays 250% better at Maximum Blaseball.",NULL
+172,"MINIMALIST","#80bfb2","#80bfb2","#2f4e52","Minimalist","This Player plays 75% worse at Maximum Blaseball.",NULL
+173,"FREE_WILL","#ffffff","#ffffff","#9e0000","Free Will","This Team will receive an Extra Will in the upcoming Election.",NULL
+174,"CUSTOM_HATCHED","#ffffff","#ffffff","#000000","Custom Hatched","This Player was hatched via Bird Rights.",NULL
+175,"FORCE","#ffffff","#ffffff","#000000","Force","This Player is Forced into position. They cannot leave or move within this Team's roster.",NULL
+176,"PSYCHOACOUSTICS","#ff007b","#ff007b","#ffd1f1","PsychoAcoustics","In Feedback or Reverb, PsychoAcoustics will occasionally Echo one of the Away Team's mods to the Home Team, for game-long use.",NULL
+177,"CRIME_SCENE","#8a8099","#8a8099","#2a0b40","Crime Scene","When a Hard-Boiled Player plays at a Crime Scene, they'll Investigate.",NULL
+178,"AFTER_PARTY","#aba9a4","#aba9a4","#450043","Afterparty","This Team will occasionally receive permanent stats boost in their games (outside of Party Time), but only while they're losing.",NULL
+179,"MIDDLING","#809fff","#809fff","#002b0f","Middling","This Team or Player will Overperform in the Midseason.",NULL
+180,"0","#cffff0","#cffff0","#904899","0","Players with 0 will always swing at strikes while there are 0 Balls and 0 Strikes in the At Bat.",NULL
+181,"H20","#cffff0","#cffff0","#489699","H20","Players with H20 will always swing at strikes while there are 2 Outs.",NULL
+182,"ATTRACTOR","#96fdff","#96fdff","#2e0330","Attractor","When this player scores a Run, they'll join the Shadows of the Team that scored them, if they're not already on their roster.",NULL
+183,"SCRAMBLED","#9a7b4f","#9a7b4f","#511c00","Scrambled","This player is Scrambled.",NULL
+184,"CAREFUL","#fff39c","#fff39c","#ad4b00","Careful","This player's Items will not be damaged by standard game actions.",NULL
+185,"AMBITIOUS","#ffcf0f","#ffcf0f","#247d7a","Ambitious","This Team or Player will Overperform in the Postseason.",NULL
+186,"PRO_SKATER","#4dbd8b","#4dbd8b","#1a385c","Pro Skater","This player cannot bail when using the Grind Rail.",NULL
+187,"PSYCHIC","#ff87ff","#ff87ff","#230747","Psychic","Psychic players have a chance of reversing a bad outcome with a Mind Trick.",NULL
+188,"FIERY","#ff995e","#ff995e","#940101","Fiery","Players with Fiery have a small chance of throwing Double Strikes.",NULL
+189,"AAA","#f1ffa3","#f1ffa3","#192400","Power Chaaarge","When this Player hits a Triple, they'll have a chance of Overperforming for the rest of the game.",NULL
+190,"UNAMBITIOUS","#ada26d","#ada26d","#062e2d","Unambitious","This Team or player will Underperform in the Postseason.",NULL
+191,"COASTING","#809fff","#809fff","#4a152c","Coasting","This Team or player will Underperform in the Midseason.",NULL
+192,"EAT_THE_RICH","#f5d64e","#f5d64e","#911d00","Eat The Rich","At the end of each season, the Fans with the top 1% of Coins will have their funds redistributed throughout the 99%.",NULL
+193,"WILD_CARDS","#dda6ed","#dda6ed","#291633","Wild Cards","At the end of the regular season, 1 Wild Card will be drawn at random from the remaining teams in each Sub-League to receive a Postseason Birth.",NULL
+194,"SIM_FREE_WILL","#ffffff","#ffffff","#9e0000","Free Wills","The bottom four finishing Teams in the League will receive an extra Will in that season's election.",NULL
+195,"SIM_ALL_YOU_CAN_EAT","#ffffff","#ffffff","#06293d","All You Can Eat","Fans are free to buy and discard Snack Slots in their Snack Pack. The number of Slots they have will determine their Payout Modifier for all Snacks. The less slots, the higher the Payout Modifier.",NULL
+196,"SIM_BASED_EVOLUTION","#ffffff","#ffffff","#254027","Based Evolution","Every Third Championship a Team wins will cause the Team and its Players to Evolve. Players that round the phylogenic Bases will get to go Home.",NULL
+197,"SIM_PARTY_TIME","#ff66f9","#ff66f9","#fff947","Party Time","A Team will enter Party Time if receiving 1 Win per remaining game would not land them in the Postseason. In Party Time, they'll receive random Stat Boosts from Partying.",NULL
+198,"FLOOD_BATH","#5988ff","#5988ff","#163073","Flood Bath","When Runners on this Team are cleared via Flooding, they'll become Slippery for the remainder of the game.",NULL
+199,"SLIPPERY","#5988ff","#5988ff","#163073","Slippery","When a Slippery baserunner scores, and first base is available, they'll slide to first after scoring.",NULL
+200,"HOTEL_MOTEL","#fd73ff","#fd73ff","#fffd7a","Hotel Motel","The Hotel Motel will occasionally create Holiday Innings during the Earlseason, where you Party instead of Score.",NULL
+201,"FAX_MACHINE","#19002b","#ffffff","#8b5cad","Fax Machine","The Fax Machine will swap the Home Team's pitcher for their best Shadows Pitcher whenever they've allowed 10+ Runs in a game.",NULL
+202,"SIM_COMMUNITY_CHEST","#ffffff","#ffffff","#40223e","Community Chest","Anytime 3000 Runs are accumulated league-wide, every Team will receive an Item Crate for a random active Player on their Team.",NULL
+203,"ENTANGLED","#4b0f69","#d285ff","#ffffff","Entangled","Whenever this Player would return from Elsewhere, their Alternate will return instead.",NULL
+204,"OFFWORLD","#fffca6","#fffca6","#54216e","Offworld","When this Player hits a foul ball, it will fly Offworld.",NULL
+205,"ACIDIC","#40ff89","#40ff89","#015437","Acidic","Acidic pitchers occasionally throw Acidic pitches, which cause any Runs scored on the play to be worth .1 less.",NULL
+206,"AA","#40f9ff","#40f9ff","#001f2e","Power Chaarge","When this Player hits a Double, they'll have a chance of Overperforming for the rest of the game.",NULL
+207,"SMITHY","#ff6c3b","#ff6c3b","#414445","Smithy","The Smithy will occasionally repair Items for Players playing in this Ballpark.",NULL
+208,"COVERUP","#9de3de","#9de3de","#2b2a29","Cover Up","This Player is covering something up.",NULL
+209,"REPLICA","#ffb452","#ffb452","#30140d","Replica","This Player will fade to Dust at the end of the Season.",NULL
+210,"DUST","#ffb452","#ffb452","#30140d","Dust","This Player is waiting to be Dusted off.",NULL
+211,"RALLY","#00ff51","#00ff51","#1a0112","Rally","This Team or Player will play 5% better when losing in the 7th inning or later.",NULL

@@ -20,6 +20,10 @@ class ChangeSourceType(Enum):
     # Weekly mods wear off at the end of every 9th day
     WEEKLY_MODS_WEAR_OFF = auto()
 
+    # Various forms of Debt cause Debted players to hit others with pitches, and
+    # that adds a weekly mod (e.g. Unstable)
+    HIT_BY_PITCH = auto()
+
 
 @dataclass
 class ChangeSource:
