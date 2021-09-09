@@ -1,15 +1,20 @@
+from datetime import timedelta, datetime
 from functools import lru_cache
 from typing import List, Optional, Set, Iterator
 
 import pandas as pd
 from blaseball_mike.chronicler import paged_get
 from blaseball_mike.session import session
+from blaseball_mike.eventually import search as feed_search
+from dateutil.parser import isoparse
 
 from Change import Change, JsonDict
 from ChangeSource import ChangeSource, ChangeSourceType, \
     UnknownTimeChangeSource, GameEventChangeSource
 
-CHRON_START_DATE = '2020-09-13T19:20:00Z'
+# CHRON_START_DATE = '2020-09-13T19:20:00Z'
+CHRON_START_DATE = '2020-07-29T08:12:22'
+CHRON_START_DATE = '2020-07-29T08:12:22.438Z'
 CHRON_VERSIONS_URL = "https://api.sibr.dev/chronicler/v2/versions"
 CHRON_GAMES_URL = 'https://api.sibr.dev/chronicler/v1/games'
 
@@ -24,6 +29,7 @@ PARTY_ATTRS = {'thwackability', 'buoyancy', 'musclitude', 'continuation',
 
 # Set of sets of attributes that were added at once
 NEW_ATTR_SETS = {
+    frozenset({'cinnamon', 'bat', 'fate', 'peanutAllergy'}),
     frozenset({'hittingRating', 'baserunningRating',
                'defenseRating', 'pitchingRating'})
 }
@@ -37,7 +43,7 @@ prev_for_player = {}
 
 def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
     if before is None:
-        return set(after.keys())
+        return set(after['data'].keys())
 
     a = after['data']
     b = before['data']
@@ -63,13 +69,28 @@ def get_change(after):
             return Change(before, after, sources)
 
     # This is to have the game in the local variable for debugging
-    game = get_game(after['entityId'], after['validFrom'])
+    games = get_game(after['entityId'], after['validFrom'])
     raise RuntimeError("Can't identify change")
+
+
+def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
+                      changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    # Chron didn't see Felix Garbage's generation until after the next game had
+    # started, so the incineration finder doesn't find it
+    if (before is None and
+            after['entityId'] == '18af933a-4afa-4cba-bda5-45160f3af99b' and
+            after['validFrom'] == '2020-07-29T09:12:25.968Z'):
+        prev_keys = changed_keys.copy()
+        changed_keys.clear()
+        yield GameEventChangeSource(ChangeSourceType.INCINERATION_REPLACEMENT,
+                                    keys_changed=prev_keys, season=1, day=39)
+        return
 
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
                      changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    if after['validFrom'] == CHRON_START_DATE:
+    # Use startswith because chron proper includes milliseconds but VCR doesn't
+    if after['validFrom'].startswith(CHRON_START_DATE):
         assert before is None
         changed_keys.clear()  # Signal that the change is fully accounted for
         yield UnknownTimeChangeSource(ChangeSourceType.CHRON_START,
@@ -78,10 +99,26 @@ def find_chron_start(before: Optional[JsonDict], after: JsonDict,
 
 def find_traj_reset(_: Optional[JsonDict], after: JsonDict,
                     changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    if 'tragicness' in changed_keys and after['data']['tragicness'] == 0.1:
+    if 'tragicness' in changed_keys and (after['data']['tragicness'] == 0 or
+                                         after['data']['tragicness'] == 0.1):
         changed_keys.remove('tragicness')
         yield UnknownTimeChangeSource(ChangeSourceType.TRAJ_RESET,
                                       keys_changed=changed_keys)
+
+
+def find_attributes_capped(before: JsonDict, after: JsonDict,
+                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    capped_keys = {k for k in changed_keys
+                   if (after['data'][k] == 0.01 and before['data'][k] < 0.01)
+                   or (after['data'][k] == 0.001 and before['data'][k] < 0.001)
+                   or (k in NEGATIVE_ATTRS and
+                       after['data'][k] == 0.99 and before['data'][k] > 0.99)
+                   or (k in NEGATIVE_ATTRS and
+                       after['data'][k] == 0.999 and before['data'][k] > 0.999)}
+    if capped_keys:
+        [changed_keys.discard(k) for k in capped_keys]
+        yield UnknownTimeChangeSource(ChangeSourceType.ATTRIBUTES_CAPPED,
+                                      keys_changed=capped_keys)
 
 
 def find_hits_tracker(_: Optional[JsonDict], __: JsonDict,
@@ -91,6 +128,23 @@ def find_hits_tracker(_: Optional[JsonDict], __: JsonDict,
         changed_keys.discard('consecutiveHits')
         yield UnknownTimeChangeSource(ChangeSourceType.HITS_TRACKER,
                                       keys_changed=hit_keys)
+
+
+def time_str(timestamp: datetime):
+    return timestamp.isoformat().replace('+00:00', 'Z')
+
+
+def find_from_feed(before: JsonDict, after: JsonDict,
+                   changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    timestamp = isoparse(after['validFrom'])
+    events = feed_search(cache_time=None, limit=-1, query={
+        'playerTags': after['entityId'],
+        'before': time_str(timestamp - timedelta(seconds=180)),
+        'after': time_str(timestamp + timedelta(seconds=180)),
+    })
+    for event in events:
+        pass
+        yield None
 
 
 # The arguments are used in the pandas query, through some arcane magic
@@ -113,9 +167,23 @@ def get_game(player_id: str, timestamp: str):
     return paged_get(CHRON_GAMES_URL, {
         "team": team_id,
         "before": timestamp,
-        "order": "desc",
-        "format": "json"
+        "order": "desc"
     }, session(None), total_count=1)[0]
+
+
+# Early chron has some large gaps between incinerations happening and the
+# replacement being recorded, so get a bunch of games leading up to this. I've
+# found you need up to at least 5 for Nic Winkler. This is only needed for
+# incinerations, since that's the only Blaseball(tm) mechanic that existed at
+# that time.
+@lru_cache(maxsize=1)
+def get_possible_games(player_id: str, timestamp: str):
+    team_id = get_player_team_id(player_id, timestamp)
+    return paged_get(CHRON_GAMES_URL, {
+        "team": team_id,
+        "before": timestamp,
+        "order": "desc"
+    }, session(None), total_count=10)
 
 
 def find_weekly_mods_wear_off(_: JsonDict, after: JsonDict,
@@ -133,6 +201,8 @@ def find_weekly_mods_wear_off(_: JsonDict, after: JsonDict,
 
 def find_weekly_mod_added(before: JsonDict, after: JsonDict,
                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if 'weekAttr' not in after['data']:
+        return
     # This function has to find all added mods because I have no infrastructure
     # to track which are accounted for and which are not.
     new_mods = set(after['data']['weekAttr']) - set(before['data']['weekAttr'])
@@ -171,6 +241,24 @@ def get_team_mods(team):
     return set(team['data']['permAttr']).union(team['data']['seasAttr'],
                                                team['data']['weekAttr'],
                                                team['data']['gameAttr'])
+
+
+def find_incin_replacement(before: Optional[JsonDict], after: JsonDict,
+                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if before is not None:
+        return
+
+    for game in get_possible_games(after['entityId'], after['validFrom']):
+        if not any("Rogue Umpire incinerated" in outcome
+                   and f"Replaced by {after['data']['name']}" in outcome
+                   for outcome in game['data']['outcomes']):
+            continue
+        prev_keys = changed_keys.copy()
+        changed_keys.clear()
+        yield GameEventChangeSource(ChangeSourceType.INCINERATION_REPLACEMENT,
+                                    keys_changed=prev_keys,
+                                    season=game['data']['season'],
+                                    day=game['data']['day'])
 
 
 def find_party(before: JsonDict, after: JsonDict,
@@ -213,6 +301,22 @@ def find_party(before: JsonDict, after: JsonDict,
                                         day=game_data['day'])
 
 
+def find_incineration_victim(_: JsonDict, after: JsonDict,
+                             changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if 'deceased' not in changed_keys:
+        return
+
+    for game in get_possible_games(after['entityId'], after['validFrom']):
+        if any("Rogue Umpire incinerated" in outcome
+               and f"{after['data']['name']}! Replaced by" in outcome
+               for outcome in game['data']['outcomes']):
+            changed_keys.remove('deceased')
+            yield GameEventChangeSource(ChangeSourceType.INCINERATED,
+                                        keys_changed={'deceased'},
+                                        season=game['data']['season'],
+                                        day=game['data']['day'])
+
+
 def find_new_attributes(before: JsonDict, _: JsonDict,
                         changed_keys: Set[str]) -> Iterator[ChangeSource]:
     for attr_set in NEW_ATTR_SETS:
@@ -236,19 +340,31 @@ def find_precision_changed(before: JsonDict, after: JsonDict,
 
 
 CHANGE_FINDERS = [
-    # Order matters! Every new player gen finder should be before all other
-    # finders, because the other finders don't check that before is not None
+    # Manual overrides
+    find_manual_fixes,
+
+    # First try finders that don't need to hit the network
     find_chron_start,
     find_hits_tracker,
+    find_new_attributes,
+
+    # Feed finder before the more specific finders, as it gives us the most
+    # information when it works
+    find_from_feed,
+
+    # All new player finders should go here so the rest can assume that `before`
+    # is populated
+    find_incin_replacement,
+
     find_weekly_mods_wear_off,
     find_weekly_mod_added,
     find_party,
-    find_new_attributes,
+    find_incineration_victim,
 
-    # I feel like this should go last (aside from traj reset) just thematically
+    # I feel like this should go last just thematically
     find_precision_changed,
-    # I know a false traj reset is vanishingly unlikely, because nothing else
-    # sets a value to exactly 0.1 and rolling exactly 0.1 randomly is
-    # vanishingly unlikely. But it still makes me feel better to put this last.
+
+    # Only return these if no other change explains the data
     find_traj_reset,
+    find_attributes_capped,
 ]

@@ -34,6 +34,15 @@ class ChangeSourceType(Enum):
     # For some reason, the precision changed
     PRECISION_CHANGE = auto()
 
+    # A player was generated to replace an incinerated player
+    INCINERATION_REPLACEMENT = auto()
+
+    # A player was incinerated
+    INCINERATED = auto()
+
+    # A player had attributes above/below the caps, and the caps were applied
+    ATTRIBUTES_CAPPED = auto()
+
 
 @dataclass
 class ChangeSource:
