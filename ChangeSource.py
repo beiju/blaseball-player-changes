@@ -43,6 +43,26 @@ class ChangeSourceType(Enum):
     # A player had attributes above/below the caps, and the caps were applied
     ATTRIBUTES_CAPPED = auto()
 
+    # Placeholder. These will be handled manually once I have nailed down the
+    # election format from the post-feed elections.
+    PRE_FEED_ELECTION = auto()
+
+    # For a while after the Season 2 election, which introduced Peanuts, players
+    # who weren't allergic to peanuts spontaneously became allergic. This was a
+    # bug that was later fixed
+    CREEPING_PEANUT_ALLERGY = auto()
+
+    # This is when some peanut allergies were manually fixed
+    CREEPING_PEANUT_DEALLERGIZE = auto()
+
+    # For a while after the Season 2 election, which introduced Peanuts, players
+    # who had a fate of 0 spontaneously gained a new fate. This was a bug that
+    # was later fixed
+    FATELESS_FATED = auto()
+
+    # On rare occasions TGB has manually changed some stuff
+    MANUAL = auto()
+
 
 @dataclass
 class ChangeSource:
@@ -59,3 +79,8 @@ class UnknownTimeChangeSource(ChangeSource):
 class GameEventChangeSource(ChangeSource):
     season: int
     day: int
+
+
+@dataclass
+class ElectionChangeSource(ChangeSource):
+    season: int

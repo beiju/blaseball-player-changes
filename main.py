@@ -1,18 +1,16 @@
 from blaseball_mike.chronicler import paged_get_lazy
-from blaseball_mike.session import session
 
-from find_changes import get_change
+from find_changes import get_change, session
 
 # CHRON_VERSIONS_URL = "http://127.0.0.1:8000/vcr/v2/versions"
 CHRON_VERSIONS_URL = "https://api.sibr.dev/chronicler/v2/versions"
 
 
 def main():
-    s = session(None)
     outputs = map(get_change, paged_get_lazy(CHRON_VERSIONS_URL, {
         'type': 'player',
         'order': 'asc',
-    }, s))
+    }, session))
 
     # Just to consume iterator
     for i, val in enumerate(outputs):

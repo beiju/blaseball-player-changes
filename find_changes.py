@@ -1,20 +1,21 @@
+import re
 from datetime import timedelta, datetime
 from functools import lru_cache
 from typing import List, Optional, Set, Iterator
 
 import pandas as pd
+import requests_cache
 from blaseball_mike.chronicler import paged_get
-from blaseball_mike.session import session
 from blaseball_mike.eventually import search as feed_search
+from blaseball_mike.session import _SESSIONS_BY_EXPIRY
 from dateutil.parser import isoparse
 
 from Change import Change, JsonDict
 from ChangeSource import ChangeSource, ChangeSourceType, \
-    UnknownTimeChangeSource, GameEventChangeSource
+    UnknownTimeChangeSource, GameEventChangeSource, ElectionChangeSource
 
 # CHRON_START_DATE = '2020-09-13T19:20:00Z'
 CHRON_START_DATE = '2020-07-29T08:12:22'
-CHRON_START_DATE = '2020-07-29T08:12:22.438Z'
 CHRON_VERSIONS_URL = "https://api.sibr.dev/chronicler/v2/versions"
 CHRON_GAMES_URL = 'https://api.sibr.dev/chronicler/v1/games'
 
@@ -34,11 +35,22 @@ NEW_ATTR_SETS = {
                'defenseRating', 'pitchingRating'})
 }
 
+# These elections will be handled manually once I figure out the election format
+PRE_FEED_ELECTIONS = {
+    # season: set[timestamp]
+    1: {'2020-08-02T19:09:05', '2020-08-02T19:09:06', '2020-08-02T19:09:07'}
+}
+
 EPS = 1e-10
+
+session = requests_cache.CachedSession("blaseball-player-changes",
+                                       backend="sqlite", expire_after=None)
+_SESSIONS_BY_EXPIRY[None] = session
 
 team_rosters = pd.read_csv('data/team_rosters.csv')
 modifications = pd.read_csv('data/modifications.csv', index_col='modification')
 prev_for_player = {}
+creeping_peanut = {}
 
 
 def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
@@ -68,23 +80,22 @@ def get_change(after):
         if not changed_keys:
             return Change(before, after, sources)
 
+    return Change(before, after, [
+        UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
+    ])
     # This is to have the game in the local variable for debugging
     games = get_game(after['entityId'], after['validFrom'])
     raise RuntimeError("Can't identify change")
 
 
-def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
+def find_manual_fixes(_: Optional[JsonDict], after: JsonDict,
                       changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    # Chron didn't see Felix Garbage's generation until after the next game had
-    # started, so the incineration finder doesn't find it
-    if (before is None and
-            after['entityId'] == '18af933a-4afa-4cba-bda5-45160f3af99b' and
-            after['validFrom'] == '2020-07-29T09:12:25.968Z'):
-        prev_keys = changed_keys.copy()
-        changed_keys.clear()
-        yield GameEventChangeSource(ChangeSourceType.INCINERATION_REPLACEMENT,
-                                    keys_changed=prev_keys, season=1, day=39)
-        return
+    # The infamous Chorby Soul soul edit
+    if (after['entityId'] == 'a1628d97-16ca-4a75-b8df-569bae02bef9' and
+            after['validFrom'] == '2020-08-03T04:23:53.241Z'):
+        changed_keys.remove('soul')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'soul'})
 
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
@@ -103,7 +114,7 @@ def find_traj_reset(_: Optional[JsonDict], after: JsonDict,
                                          after['data']['tragicness'] == 0.1):
         changed_keys.remove('tragicness')
         yield UnknownTimeChangeSource(ChangeSourceType.TRAJ_RESET,
-                                      keys_changed=changed_keys)
+                                      keys_changed={'tragicness'})
 
 
 def find_attributes_capped(before: JsonDict, after: JsonDict,
@@ -168,7 +179,7 @@ def get_game(player_id: str, timestamp: str):
         "team": team_id,
         "before": timestamp,
         "order": "desc"
-    }, session(None), total_count=1)[0]
+    }, session, total_count=1)[0]
 
 
 # Early chron has some large gaps between incinerations happening and the
@@ -183,7 +194,7 @@ def get_possible_games(player_id: str, timestamp: str):
         "team": team_id,
         "before": timestamp,
         "order": "desc"
-    }, session(None), total_count=10)
+    }, session, total_count=10)
 
 
 def find_weekly_mods_wear_off(_: JsonDict, after: JsonDict,
@@ -232,7 +243,7 @@ def get_player_team(player_id: str, timestamp: str):
         "id": team_id,
         "before": timestamp,
         "order": "desc",
-    }, session(None), total_count=1)
+    }, session, total_count=1)
     assert len(results) == 1
     return results[0]
 
@@ -317,8 +328,11 @@ def find_incineration_victim(_: JsonDict, after: JsonDict,
                                         day=game['data']['day'])
 
 
-def find_new_attributes(before: JsonDict, _: JsonDict,
+def find_new_attributes(before: Optional[JsonDict], _: JsonDict,
                         changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if before is None:
+        return
+
     for attr_set in NEW_ATTR_SETS:
         if (attr_set.issubset(changed_keys) and
                 all(before['data'].get(key, 0) == 0 for key in attr_set)):
@@ -327,16 +341,81 @@ def find_new_attributes(before: JsonDict, _: JsonDict,
                                           keys_changed=set(attr_set))
 
 
+def find_pre_feed_election(_: JsonDict, after: JsonDict,
+                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    for season, timestamps in PRE_FEED_ELECTIONS.items():
+        timestamp_no_ms = re.sub(r'(:?\.\d{1,3})?Z$', '', after['validFrom'])
+        if timestamp_no_ms in timestamps:
+            prev_keys = changed_keys.copy()
+            changed_keys.clear()
+            yield ElectionChangeSource(ChangeSourceType.PRE_FEED_ELECTION,
+                                       keys_changed=prev_keys,
+                                       season=season)
+
+
+def find_fateless_fated(before: Optional[JsonDict], after: JsonDict,
+                        changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    # Restrict to creeping peanuts/fateless fated dates
+    if not '2020-08-02T19:09:07' < after['validFrom'] < '2020-08-03T05:23:57':
+        return
+
+    # Only record this if it's _only_ fate (and maybe peanut allergy) changing
+    if (before is not None and
+            'fate' in changed_keys and
+            changed_keys.issubset({'peanutAllergy', 'fate', 'tragicness'}) and
+            before['data']['fate'] == 0 and
+            after['data']['fate'] != 0):
+        changed_keys.remove('fate')
+        yield UnknownTimeChangeSource(ChangeSourceType.FATELESS_FATED,
+                                      keys_changed={'fate'})
+
+
+def find_creeping_peanuts(before: Optional[JsonDict], after: JsonDict,
+                          changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    # Restrict to creeping peanuts/fateless fated dates
+    if not '2020-08-02T19:09:07' < after['validFrom'] < '2020-08-03T05:23:57':
+        return
+
+    if (before is not None and
+            'peanutAllergy' in changed_keys and
+            changed_keys.issubset({'peanutAllergy', 'fate', 'tragicness'})):
+        changed_keys.remove('peanutAllergy')
+        if after['data']['peanutAllergy']:
+            # Player was just made creepy-peanut
+            assert after['entityId'] not in creeping_peanut
+            creeping_peanut[after['entityId']] = True
+            yield UnknownTimeChangeSource(
+                ChangeSourceType.CREEPING_PEANUT_ALLERGY, {'peanutAllergy'})
+        else:
+            if not after['entityId'] in creeping_peanut:
+                print(after['data']['name'],
+                      "was un-allergized without being made allergic")
+            elif not creeping_peanut[after['entityId']]:
+                print(after['data']['name'],
+                      "was un-allergized twice")
+            creeping_peanut[after['entityId']] = False
+            yield UnknownTimeChangeSource(
+                ChangeSourceType.CREEPING_PEANUT_DEALLERGIZE, {'peanutAllergy'})
+
+
 def find_precision_changed(before: JsonDict, after: JsonDict,
                            changed_keys: Set[str]) -> Iterator[ChangeSource]:
     precision_keys = {key for key in changed_keys
                       if (key in before['data'] and
                           key in after['data'] and
-                          abs(before['data'][key] - after['data'][key]) < EPS)}
+                          approximately_equal(after['data'][key],
+                                              before['data'][key]))}
     if precision_keys:
         [changed_keys.discard(attr) for attr in precision_keys]
         yield UnknownTimeChangeSource(ChangeSourceType.PRECISION_CHANGE,
                                       keys_changed=precision_keys)
+
+
+def approximately_equal(a, b):
+    try:
+        return abs(a - b) < EPS
+    except TypeError:
+        return a == b
 
 
 CHANGE_FINDERS = [
@@ -347,6 +426,9 @@ CHANGE_FINDERS = [
     find_chron_start,
     find_hits_tracker,
     find_new_attributes,
+    find_pre_feed_election,
+    find_creeping_peanuts,
+    find_fateless_fated,
 
     # Feed finder before the more specific finders, as it gives us the most
     # information when it works
