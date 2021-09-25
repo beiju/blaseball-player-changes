@@ -1,4 +1,3 @@
-import re
 from datetime import timedelta, datetime
 from functools import lru_cache
 from typing import List, Optional, Set, Iterator
@@ -27,18 +26,24 @@ PARTY_ATTRS = {'thwackability', 'buoyancy', 'musclitude', 'continuation',
                'groundFriction', 'anticapitalism', 'baseThirst', 'patheticism',
                'moxie', 'tenaciousness', 'tragicness', 'cinnamon', 'coldness',
                'ruthlessness'}
+# Peanut attrs are party attrs plus fingers minus cinnamon(?)
+PEANUT_ATTRS = PARTY_ATTRS.union({'totalFingers'}).difference({'cinnamon'})
 
 # Set of sets of attributes that were added at once
 NEW_ATTR_SETS = {
     frozenset({'cinnamon', 'bat', 'fate', 'peanutAllergy'}),
     frozenset({'hittingRating', 'baserunningRating',
-               'defenseRating', 'pitchingRating'})
+               'defenseRating', 'pitchingRating'}),
+    frozenset({'armor', 'coffee', 'ritual', 'blood'}),
+    frozenset({'seasAttr', 'permAttr', 'gameAttr', 'weekAttr'}),
 }
 
 # These elections will be handled manually once I figure out the election format
 PRE_FEED_ELECTIONS = {
-    # season: set[timestamp]
-    1: {'2020-08-02T19:09:05', '2020-08-02T19:09:06', '2020-08-02T19:09:07'}
+    # season: (start time, end time)
+    1: ('2020-08-02T19:09:05', '2020-08-02T19:09:08'),
+    2: ('2020-08-09T19:27:41', '2020-08-09T19:27:47'),
+    3: ('2020-08-30T19:18:18', '2020-08-30T19:18:28'),
 }
 
 EPS = 1e-10
@@ -51,6 +56,9 @@ team_rosters = pd.read_csv('data/team_rosters.csv')
 modifications = pd.read_csv('data/modifications.csv', index_col='modification')
 prev_for_player = {}
 creeping_peanut = {}
+
+discipline_peanuts = pd.read_csv('data/discipline_peanuts.csv')
+discipline_feedbacks = pd.read_csv('data/discipline_feedbacks.csv')
 
 
 def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
@@ -88,7 +96,7 @@ def get_change(after):
     raise RuntimeError("Can't identify change")
 
 
-def find_manual_fixes(_: Optional[JsonDict], after: JsonDict,
+def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
                       changed_keys: Set[str]) -> Iterator[ChangeSource]:
     # The infamous Chorby Soul soul edit
     if (after['entityId'] == 'a1628d97-16ca-4a75-b8df-569bae02bef9' and
@@ -96,6 +104,80 @@ def find_manual_fixes(_: Optional[JsonDict], after: JsonDict,
         changed_keys.remove('soul')
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'soul'})
+
+    # Renaming York's bat
+    if (after['entityId'] == '86d4e22b-f107-4bcf-9625-32d387fcb521' and
+            after['validFrom'] == '2020-08-09T06:23:26.778Z'):
+        changed_keys.remove('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'bat'})
+
+    # Giving axel his bat, I guess? Seems like this was well post-election
+    if (after['entityId'] == '3af96a6b-866c-4b03-bc14-090acf6ecee5' and
+            after['validFrom'] == '2020-08-10T18:47:01.611Z'):
+        changed_keys.remove('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'bat'})
+
+    # Manually Wyatts Masoning Marco Stink
+    if (after['entityId'] == '87e6ae4b-67de-4973-aa56-0fc9835a1e1e' and
+            after['validFrom'] == '2020-08-12T20:25:33.308Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # Manually Wyatt Masoning Summers Preston
+    if (after['entityId'] == '80e474a3-7d2b-431d-8192-2f1e27162607' and
+            after['validFrom'] == '2020-08-12T20:25:34.306Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # Manually Wyatt Masonsing Rivers Clembons
+    if (after['entityId'] == 'af6b3edc-ed52-4edc-b0c9-14e0a5ae0ee3' and
+            after['validFrom'] == '2020-08-12T20:25:34.726Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # I'm taking a stand here: the wyatt masoning doesn't get its own type.
+    if before is not None and changed_keys == {'name'} and (
+            before['data']['name'] == "Wyatt Mason" or
+            before['data']['name'] == "Wyatts Mason" or
+            before['data']['name'] == "Wyatt Masons" or
+            before['data']['name'] == "Wyatt Breadwinner"):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # Thomas England -> Sixpack Dogwalker
+    if (after['entityId'] == '3a96d76a-c508-45a0-94a0-8f64cd6beeb4' and
+            after['validFrom'] == '2020-08-28T19:54:23.418Z'):
+        keys = {'name', 'ritual', 'bat', 'thwackability'}
+        changed_keys.difference_update(keys)
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL, keys)
+
+    # The waveback event undid Baldwin's fate change from feedback
+    if (after['entityId'] == 'e4034192-4dc6-4901-bb30-07fe3cf77b5e' and
+            after['validFrom'] == '2020-08-28T19:54:23.418Z'):
+        changed_keys.remove('fate')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'fate'})
+
+    # Shortly after fixing the waveback event they thought of a better joke for
+    # the name of new Sixpack's bat
+    if (after['entityId'] == '3a96d76a-c508-45a0-94a0-8f64cd6beeb4' and
+            after['validFrom'] == '2020-08-28T21:02:34.226Z'):
+        changed_keys.remove('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'bat'})
+
+    # Change Tot Fox's ritual for, I think, cultural sensitivity
+    if (after['entityId'] == '90c2cec7-0ed5-426a-9de8-754f34d59b39' and
+            after['validFrom'] == '2020-08-30T07:26:01.225Z'):
+        changed_keys.remove('ritual')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'ritual'})
 
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
@@ -106,6 +188,29 @@ def find_chron_start(before: Optional[JsonDict], after: JsonDict,
         changed_keys.clear()  # Signal that the change is fully accounted for
         yield UnknownTimeChangeSource(ChangeSourceType.CHRON_START,
                                       keys_changed=changed_keys)
+
+
+def find_rename_attribute(_: Optional[JsonDict], __: JsonDict,
+                          changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if changed_keys.issubset({'id', '_id'}):
+        changed_keys.remove('id')
+        changed_keys.remove('_id')
+        yield UnknownTimeChangeSource(ChangeSourceType.RENAMED_ATTRIBUTES,
+                                      keys_changed={'id', '_id'})
+
+
+def find_change_attribute_format(_: Optional[JsonDict], after: JsonDict,
+                                 changed_keys: Set[str]) -> \
+        Iterator[ChangeSource]:
+    # Changed bat attribute from the bat name to a bat id
+    if 'bat' in changed_keys and (
+            after['validFrom'] == '2020-08-30T07:25:59.724Z' or
+            after['validFrom'] == '2020-08-30T07:26:00.713Z' or
+            # they forgot about axel...
+            after['validFrom'] == '2020-08-30T20:18:56.326Z'):
+        changed_keys.discard('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.CHANGED_ATTRIBUTE_FORMAT,
+                                      keys_changed={'bat'})
 
 
 def find_traj_reset(_: Optional[JsonDict], after: JsonDict,
@@ -161,6 +266,7 @@ def find_from_feed(before: JsonDict, after: JsonDict,
 # The arguments are used in the pandas query, through some arcane magic
 # noinspection PyUnusedLocal
 def get_player_team_id(player_id: str, timestamp: str):
+    timestamp = timestamp.replace('T', ' ')
     result = team_rosters.query(
         'player_id==@player_id and valid_from<=@timestamp and '
         '(valid_until>@timestamp or valid_until.isnull())')
@@ -212,12 +318,12 @@ def find_weekly_mods_wear_off(_: JsonDict, after: JsonDict,
 
 def find_weekly_mod_added(before: JsonDict, after: JsonDict,
                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    if 'weekAttr' not in after['data']:
+    if 'weekAttr' not in changed_keys:
         return
     # This function has to find all added mods because I have no infrastructure
     # to track which are accounted for and which are not.
     new_mods = set(after['data']['weekAttr']) - set(before['data']['weekAttr'])
-    if 'weekAttr' in changed_keys and new_mods:
+    if new_mods:
         changed_keys.remove('weekAttr')
         game_data = get_game(after['entityId'], after['validFrom'])['data']
         player_name = before['data']['name']
@@ -343,9 +449,8 @@ def find_new_attributes(before: Optional[JsonDict], _: JsonDict,
 
 def find_pre_feed_election(_: JsonDict, after: JsonDict,
                            changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    for season, timestamps in PRE_FEED_ELECTIONS.items():
-        timestamp_no_ms = re.sub(r'(:?\.\d{1,3})?Z$', '', after['validFrom'])
-        if timestamp_no_ms in timestamps:
+    for season, (start_time, end_time) in PRE_FEED_ELECTIONS.items():
+        if start_time <= after['validFrom'] <= end_time:
             prev_keys = changed_keys.copy()
             changed_keys.clear()
             yield ElectionChangeSource(ChangeSourceType.PRE_FEED_ELECTION,
@@ -368,6 +473,70 @@ def find_fateless_fated(before: Optional[JsonDict], after: JsonDict,
         changed_keys.remove('fate')
         yield UnknownTimeChangeSource(ChangeSourceType.FATELESS_FATED,
                                       keys_changed={'fate'})
+
+
+# noinspection PyUnusedLocal
+def find_discipline_peanut(before: Optional[JsonDict], after: JsonDict,
+                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if before is not None and changed_keys.issubset(PEANUT_ATTRS):
+        player_id = after['entityId']
+        before_time = before['validFrom'].replace('T', ' ')
+        after_time = after['validFrom'].replace('T', ' ')
+        possible_nuts = discipline_peanuts.query(
+            'player_id==@player_id and '
+            'perceived_at>=@before_time and perceived_at<=@after_time')
+        if len(possible_nuts) == 1:
+            [changed_keys.discard(attr) for attr in PEANUT_ATTRS]
+            nut_row = possible_nuts.iloc[0]
+            yield GameEventChangeSource(ChangeSourceType.PEANUT,
+                                        keys_changed=PARTY_ATTRS,
+                                        season=int(nut_row['season']),
+                                        day=int(nut_row['day']))
+        else:
+            # 2 peanuts in one chron update? inconceivable!
+            assert len(possible_nuts) == 0
+
+
+def find_first_blood(before: Optional[JsonDict], _: JsonDict,
+                     changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if (before is not None and 'blood' in changed_keys and
+            before['data']['blood'] == 0):
+        changed_keys.remove('blood')
+        yield UnknownTimeChangeSource(ChangeSourceType.FIRST_BLOOD, {'blood'})
+
+
+def find_interview(before: Optional[JsonDict], _: JsonDict,
+                   changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if (before is not None and
+            'coffee' in changed_keys and before['data']['coffee'] == 0 and
+            'ritual' in changed_keys and before['data']['ritual'] == ''):
+        changed_keys.remove('coffee')
+        changed_keys.remove('ritual')
+        yield UnknownTimeChangeSource(ChangeSourceType.INTERVIEW,
+                                      keys_changed={'coffee', 'ritual'})
+
+
+# noinspection PyUnusedLocal
+def find_discipline_feedback_fate(before: Optional[JsonDict], after: JsonDict,
+                                  changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if before is not None and 'fate' in changed_keys:
+        player_id = after['entityId']
+        before_time = before['validFrom'].replace('T', ' ')
+        after_time = after['validFrom'].replace('T', ' ')
+        possible_feedbacks = discipline_feedbacks.query(
+            '(player_id==@player_id or player_id_2==@player_id) and '
+            'perceived_at>=@before_time and perceived_at<=@after_time')
+        if len(possible_feedbacks) == 1:
+            changed_keys.discard('fate')
+            feedback_row = possible_feedbacks.iloc[0]
+            yield GameEventChangeSource(ChangeSourceType.FEEDBACK_FATE,
+                                        keys_changed={'fate'},
+                                        season=int(feedback_row['season']),
+                                        day=int(feedback_row['day']))
+        else:
+            # 2 feedbacks in one chron update? inconceivable!
+            assert len(possible_feedbacks) == 0
 
 
 def find_creeping_peanuts(before: Optional[JsonDict], after: JsonDict,
@@ -424,11 +593,17 @@ CHANGE_FINDERS = [
 
     # First try finders that don't need to hit the network
     find_chron_start,
+    find_rename_attribute,
+    find_change_attribute_format,
     find_hits_tracker,
     find_new_attributes,
     find_pre_feed_election,
     find_creeping_peanuts,
     find_fateless_fated,
+    find_discipline_peanut,
+    find_first_blood,
+    find_interview,
+    find_discipline_feedback_fate,
 
     # Feed finder before the more specific finders, as it gives us the most
     # information when it works

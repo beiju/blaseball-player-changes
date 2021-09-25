@@ -15,7 +15,7 @@ def main():
     # Just to consume iterator
     for i, val in enumerate(outputs):
         if val is not None:
-            print(i, val.after['name'], val.sources)
+            print(i, val.after['name'], val.valid_from, val.sources)
         else:
             print(i, None)
 

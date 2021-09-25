@@ -4,6 +4,9 @@ from typing import Set
 
 
 class ChangeSourceType(Enum):
+    # For debugging
+    UNKNOWN = auto()
+
     # For players which existed when Chronicler's recording started, this is the
     # "change" corresponding to that player first being recorded.
     CHRON_START = auto()
@@ -30,6 +33,13 @@ class ChangeSourceType(Enum):
     # Attributes were added that didn't used to exist. For example, star ratings
     # in the Expansion era.
     ADDED_ATTRIBUTES = auto()
+
+    # At least once they renamed an attribute -- _id to id
+    RENAMED_ATTRIBUTES = auto()
+
+    # At least once they changed the format of the attributes (changed the
+    # values without changing the meaning) -- for legacy bats
+    CHANGED_ATTRIBUTE_FORMAT = auto()
 
     # For some reason, the precision changed
     PRECISION_CHANGE = auto()
@@ -62,6 +72,22 @@ class ChangeSourceType(Enum):
 
     # On rare occasions TGB has manually changed some stuff
     MANUAL = auto()
+
+    # Players eat peanuts sometimes, often inadvisedly
+    PEANUT = auto()
+
+    # In the discipline era players weren't generated with a blood type. This
+    # change is their blood type being granted.
+    FIRST_BLOOD = auto()
+
+    # In the discipline era players weren't generated with coffee and rituals.
+    # They were added after some time
+    # TODO First blood is part of interview for all but 2 records. What's up
+    #   with that?
+    INTERVIEW = auto()
+
+    # When players get feedbacked, sometimes they change(d?) fate
+    FEEDBACK_FATE = auto()
 
 
 @dataclass
