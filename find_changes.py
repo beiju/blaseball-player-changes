@@ -11,7 +11,8 @@ from dateutil.parser import isoparse
 
 from Change import Change, JsonDict
 from ChangeSource import ChangeSource, ChangeSourceType, \
-    UnknownTimeChangeSource, GameEventChangeSource, ElectionChangeSource
+    UnknownTimeChangeSource, GameEventChangeSource, ElectionChangeSource, \
+    IdolBoardChangeSource
 
 # CHRON_START_DATE = '2020-09-13T19:20:00Z'
 CHRON_START_DATE = '2020-07-29T08:12:22'
@@ -39,11 +40,17 @@ NEW_ATTR_SETS = {
 }
 
 # These elections will be handled manually once I figure out the election format
-PRE_FEED_ELECTIONS = {
+DISCIPLINE_ELECTION_TIMES = {
     # season: (start time, end time)
     1: ('2020-08-02T19:09:05', '2020-08-02T19:09:08'),
     2: ('2020-08-09T19:27:41', '2020-08-09T19:27:47'),
     3: ('2020-08-30T19:18:18', '2020-08-30T19:18:28'),
+    4: ('2020-09-06T19:06:11', '2020-09-06T19:06:21'),
+    5: ('2020-09-13T19:20:00', '2020-09-13T19:25:00'),
+}
+
+DISCIPLINE_IDOLBOARD_TIMES = {
+    5: ('2020-09-11T19:05:00', '2020-09-11T19:05:10'),
 }
 
 EPS = 1e-10
@@ -59,6 +66,7 @@ creeping_peanut = {}
 
 discipline_peanuts = pd.read_csv('data/discipline_peanuts.csv')
 discipline_feedbacks = pd.read_csv('data/discipline_feedbacks.csv')
+discipline_blooddrains = pd.read_csv('data/discipline_blooddrains.csv')
 
 
 def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
@@ -449,7 +457,7 @@ def find_new_attributes(before: Optional[JsonDict], _: JsonDict,
 
 def find_pre_feed_election(_: JsonDict, after: JsonDict,
                            changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    for season, (start_time, end_time) in PRE_FEED_ELECTIONS.items():
+    for season, (start_time, end_time) in DISCIPLINE_ELECTION_TIMES.items():
         if start_time <= after['validFrom'] <= end_time:
             prev_keys = changed_keys.copy()
             changed_keys.clear()
@@ -539,6 +547,100 @@ def find_discipline_feedback_fate(before: Optional[JsonDict], after: JsonDict,
             assert len(possible_feedbacks) == 0
 
 
+def find_discipline_rare_events(_: Optional[JsonDict], after: JsonDict,
+                                changed_keys: Set[str]) -> \
+        Iterator[ChangeSource]:
+    # These events all happened once or twice so a csv would be overkill
+
+    # Don Mitchell getting Reverberating
+    if (after['entityId'] == '11de4da3-8208-43ff-a1ff-0b3480a0fbf1' and
+            after['validFrom'] == '2020-09-02T12:21:59.99Z'):
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.REVERBERATING_BESTOWED,
+                                    keys_changed={'permAttr'},
+                                    season=4, day=44)
+
+    # The only Soundproof in the discipline era
+    if (after['entityId'] == '41949d4d-b151-4f46-8bf7-73119a48fac8' and
+            after['validFrom'] == '2020-09-11T10:20:00.915Z'):
+        changed_keys.remove('ruthlessness')
+        yield GameEventChangeSource(ChangeSourceType.FEEDBACK_SOUNDPROOF,
+                                    keys_changed={'ruthlessness'},
+                                    season=5, day=90)
+    if (after['entityId'] == 'e6114fd4-a11d-4f6c-b823-65691bb2d288' and
+            after['validFrom'] == '2020-09-11T10:20:00.915Z'):
+        changed_keys.difference_update(PEANUT_ATTRS)  # same attrs as peanuts
+        yield GameEventChangeSource(ChangeSourceType.FEEDBACK_SOUNDPROOF,
+                                    keys_changed=PEANUT_ATTRS,
+                                    season=5, day=90)
+
+    # Jaylen came back from the dead and had a weird combo of attributes to add
+    if (after['entityId'] == '04e14d7b-5021-4250-a3cd-932ba8e0a889' and
+            after['validFrom'] == '2020-09-13T20:20:00.669Z'):
+        changed_keys.difference_update({'ritual', 'peanutAllergy'})
+        yield UnknownTimeChangeSource(ChangeSourceType.ADDED_ATTRIBUTES,
+                                      keys_changed={'ritual', 'peanutAllergy'})
+
+
+# noinspection PyUnusedLocal
+def find_discipline_blooddrain(before: Optional[JsonDict], after: JsonDict,
+                               changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if before is None:
+        return
+    player_id = after['entityId']
+    before_time = before['validFrom'].replace('T', ' ')
+    after_time = after['validFrom'].replace('T', ' ')
+    possible_blooddrains = discipline_blooddrains.query(
+        'player_id==@player_id and '
+        'perceived_at>=@before_time and perceived_at<=@after_time')
+    if len(possible_blooddrains) == 1:
+        expected_keys = set()
+        blooddrain = possible_blooddrains.iloc[0]
+        if "hitting ability" in blooddrain['evt']:
+            expected_keys = {
+                'buoyancy', 'musclitude', 'moxie', 'divinity', 'patheticism',
+                'tragicness', 'martyrdom', 'thwackability'
+            }
+        elif "baserunning ability" in blooddrain['evt']:
+            expected_keys = {'continuation', 'groundFriction', 'laserlikeness',
+                             'baseThirst', 'indulgence'}
+        elif "pitching ability" in blooddrain['evt']:
+            expected_keys = {
+                'totalFingers', 'coldness', 'shakespearianism',
+                'unthwackability', 'overpowerment', 'suppression',
+                'ruthlessness'
+            }
+        elif "defensive ability" in blooddrain['evt']:
+            expected_keys = {'watchfulness', 'tenaciousness', 'omniscience',
+                             'anticapitalism', 'chasiness'}
+        else:
+            assert False
+        if changed_keys.intersection(expected_keys):
+            changed_keys.difference_update(expected_keys)
+            yield GameEventChangeSource(ChangeSourceType.BLOODDRAIN,
+                                        keys_changed=expected_keys,
+                                        season=int(blooddrain['season']),
+                                        day=int(blooddrain['day']))
+    else:
+        # 2 feedbacks in one chron update? inconceivable!
+        assert len(possible_blooddrains) == 0
+
+
+def find_discipline_idolboard_mod(_: Optional[JsonDict], after: JsonDict,
+                                  changed_keys: Set[str]) -> \
+        Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    for season, (start_time, end_time) in DISCIPLINE_IDOLBOARD_TIMES.items():
+        if start_time <= after['validFrom'] <= end_time:
+            changed_keys.discard('permAttr')
+            yield IdolBoardChangeSource(ChangeSourceType.IDOLBOARD_MOD,
+                                        keys_changed={'permAttr'},
+                                        season=season)
+
+
 def find_creeping_peanuts(before: Optional[JsonDict], after: JsonDict,
                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
     # Restrict to creeping peanuts/fateless fated dates
@@ -604,6 +706,9 @@ CHANGE_FINDERS = [
     find_first_blood,
     find_interview,
     find_discipline_feedback_fate,
+    find_discipline_rare_events,
+    find_discipline_blooddrain,
+    find_discipline_idolboard_mod,
 
     # Feed finder before the more specific finders, as it gives us the most
     # information when it works

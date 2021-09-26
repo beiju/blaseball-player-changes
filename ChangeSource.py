@@ -89,6 +89,19 @@ class ChangeSourceType(Enum):
     # When players get feedbacked, sometimes they change(d?) fate
     FEEDBACK_FATE = auto()
 
+    # Very rarely, Reverb weather bestows the Reverberating mod
+    REVERBERATING_BESTOWED = auto()
+
+    # In Blooddrain weather, players drain blood
+    BLOODDRAIN = auto()
+
+    # When a Feedback is attempted but the target player is Soundproof, the
+    # initiating player gets impaired a small amount
+    FEEDBACK_SOUNDPROOF = auto()
+
+    # The idol board sometimes bestows mods, e.g. Shelled
+    IDOLBOARD_MOD = auto()
+
 
 @dataclass
 class ChangeSource:
@@ -109,4 +122,9 @@ class GameEventChangeSource(ChangeSource):
 
 @dataclass
 class ElectionChangeSource(ChangeSource):
+    season: int
+
+
+@dataclass
+class IdolBoardChangeSource(ChangeSource):
     season: int
