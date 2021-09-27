@@ -1,10 +1,9 @@
 from datetime import timedelta, datetime
-from functools import lru_cache
+from functools import partial
 from typing import List, Optional, Set, Iterator
 
 import pandas as pd
 import requests_cache
-from blaseball_mike.chronicler import paged_get
 from blaseball_mike.eventually import search as feed_search
 from blaseball_mike.session import _SESSIONS_BY_EXPIRY
 from dateutil.parser import isoparse
@@ -12,7 +11,7 @@ from dateutil.parser import isoparse
 from Change import Change, JsonDict
 from ChangeSource import ChangeSource, ChangeSourceType, \
     UnknownTimeChangeSource, GameEventChangeSource, ElectionChangeSource, \
-    IdolBoardChangeSource, GameEndChangeSource
+    EndseasonChangeSource, GameEndChangeSource
 
 # CHRON_START_DATE = '2020-09-13T19:20:00Z'
 CHRON_START_DATE = '2020-07-29T08:12:22'
@@ -48,10 +47,18 @@ DISCIPLINE_ELECTION_TIMES = {
     3: ('2020-08-30T19:18:18', '2020-08-30T19:18:28'),
     4: ('2020-09-06T19:06:11', '2020-09-06T19:06:21'),
     5: ('2020-09-13T19:20:00', '2020-09-13T19:25:00'),
+    # I think this election is effectively extra long because there was a mis-
+    # fired blessing that needed to be fixed manually?
+    6: ('2020-09-20T19:20:01', '2020-09-21T07:46:00'),
+    7: ('2020-09-27T19:02:00', '2020-09-27T19:12:00'),
+    8: ('2020-10-11T19:02:00', '2020-10-11T19:12:00'),
 }
 
-DISCIPLINE_IDOLBOARD_TIMES = {
+DISCIPLINE_ENDSEASON_TIMES = {
     5: ('2020-09-11T19:05:00', '2020-09-11T19:05:10'),
+    6: ('2020-09-18T21:29:18', '2020-09-18T21:35:12'),
+    7: ('2020-09-25T19:15:33', '2020-09-25T19:25:33'),
+    8: ('2020-10-09T19:00:00', '2020-10-09T19:10:00'),
 }
 
 EPS = 1e-10
@@ -71,6 +78,10 @@ discipline_feedbacks = pd.read_csv('data/discipline_feedbacks.csv')
 discipline_blooddrains = pd.read_csv('data/discipline_blooddrains.csv')
 discipline_beans = pd.read_csv('data/discipline_beans.csv')
 discipline_week_ends = pd.read_csv('data/discipline_week_ends.csv')
+discipline_unshellings = pd.read_csv('data/discipline_unshellings.csv')
+discipline_parties = pd.read_csv('data/discipline_parties.csv')
+discipline_flame_eatings = pd.read_csv('data/discipline_flame_eatings.csv')
+discipline_magmatic_hits = pd.read_csv('data/discipline_magmatic_hits.csv')
 
 
 def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
@@ -221,6 +232,36 @@ def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'permAttr'})
 
+    # When Sexton was Shelled they, presumably accidentally, lost the Alternate
+    # mod. This change put it back.
+    if (after['entityId'] == '0bb35615-63f2-4492-80ec-b6b322dc5450' and
+            after['validFrom'] == '2020-09-19T13:30:00.653Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'permAttr'})
+
+    # They let inky throw the blagonball
+    if (after['entityId'] == 'b6aa8ce8-2587-4627-83c1-2a48d44afaee' and
+            after['validFrom'] == '2020-09-20T06:55:00.646Z'):
+        changed_keys.remove('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'bat'})
+
+    # It looks like Jaylen's second debt change, from the flickering kind to
+    # the repeating kind, was manual
+    if (after['entityId'] == '04e14d7b-5021-4250-a3cd-932ba8e0a889' and
+            after['validFrom'] == '2020-10-05T06:18:00.276597Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'permAttr'})
+
+    # It looks like Jaylen's debt being cured was manual too? TODO Check this
+    if (after['entityId'] == '04e14d7b-5021-4250-a3cd-932ba8e0a889' and
+            after['validFrom'] == '2020-10-12T05:14:00.370476Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'permAttr'})
+
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
                      changed_keys: Set[str]) -> Iterator[ChangeSource]:
@@ -242,7 +283,7 @@ def find_rename_attribute(_: Optional[JsonDict], __: JsonDict,
                                       keys_changed={'id', '_id'})
 
 
-def find_change_attribute_format(_: Optional[JsonDict], after: JsonDict,
+def find_change_attribute_format(before: Optional[JsonDict], after: JsonDict,
                                  changed_keys: Set[str]) -> \
         Iterator[ChangeSource]:
     # Changed bat attribute from the bat name to a bat id
@@ -251,7 +292,17 @@ def find_change_attribute_format(_: Optional[JsonDict], after: JsonDict,
             after['validFrom'] == '2020-08-30T07:26:00.713Z' or
             # they forgot about axel...
             after['validFrom'] == '2020-08-30T20:18:56.326Z'):
-        changed_keys.discard('bat')
+        changed_keys.remove('bat')
+        yield UnknownTimeChangeSource(ChangeSourceType.CHANGED_ATTRIBUTE_FORMAT,
+                                      keys_changed={'bat'})
+
+    # When the Hall opened(?) a bunch of players' bats changed from '' to None
+    if (before is not None and
+            'bat' in changed_keys and
+            'bat' in before['data'] and
+            before['data']['bat'] == '' and
+            after['data']['bat'] == None):
+        changed_keys.remove('bat')
         yield UnknownTimeChangeSource(ChangeSourceType.CHANGED_ATTRIBUTE_FORMAT,
                                       keys_changed={'bat'})
 
@@ -260,9 +311,10 @@ def find_traj_reset(_: Optional[JsonDict], after: JsonDict,
                     changed_keys: Set[str]) -> Iterator[ChangeSource]:
     if 'tragicness' in changed_keys and (after['data']['tragicness'] == 0 or
                                          after['data']['tragicness'] == 0.1):
-        changed_keys.remove('tragicness')
+        keys = changed_keys.intersection({'tragicness', 'hittingRating'})
+        changed_keys.difference_update(keys)
         yield UnknownTimeChangeSource(ChangeSourceType.TRAJ_RESET,
-                                      keys_changed={'tragicness'})
+                                      keys_changed=keys)
 
 
 def find_attributes_capped(before: JsonDict, after: JsonDict,
@@ -402,11 +454,27 @@ def find_discipline_idolboard_mod(_: Optional[JsonDict], after: JsonDict,
     if 'permAttr' not in changed_keys:
         return
 
-    for season, (start_time, end_time) in DISCIPLINE_IDOLBOARD_TIMES.items():
+    for season, (start_time, end_time) in DISCIPLINE_ENDSEASON_TIMES.items():
         if start_time <= after['validFrom'] <= end_time:
             changed_keys.discard('permAttr')
-            yield IdolBoardChangeSource(ChangeSourceType.IDOLBOARD_MOD,
+            yield EndseasonChangeSource(ChangeSourceType.IDOLBOARD_MOD,
                                         keys_changed={'permAttr'},
+                                        season=season)
+
+
+def find_discipline_postseason_birth(before: Optional[JsonDict],
+                                     after: JsonDict,
+                                     changed_keys: Set[str]) -> \
+        Iterator[ChangeSource]:
+    if before is not None:
+        return
+
+    for season, (start_time, end_time) in DISCIPLINE_ENDSEASON_TIMES.items():
+        if start_time <= after['validFrom'] <= end_time:
+            changed_keys_copy = changed_keys.copy()
+            changed_keys.clear()
+            yield EndseasonChangeSource(ChangeSourceType.POSTSEASON_BIRTH,
+                                        keys_changed=changed_keys_copy,
                                         season=season)
 
 
@@ -452,6 +520,56 @@ def find_discipline_rare_events(_: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.ADDED_ATTRIBUTES,
                                       keys_changed={'ritual', 'peanutAllergy'})
 
+    # Birth of Pitching Machine
+    if (after['entityId'] == 'de21c97e-f575-43b7-8be7-ecc5d8c4eaff' and
+            after['validFrom'] == '2020-09-21T16:00:00.646Z'):
+        changed_keys_copy = changed_keys.copy()
+        changed_keys.clear()
+        yield UnknownTimeChangeSource(ChangeSourceType.PITCHING_MACHINE_CREATED,
+                                      keys_changed=changed_keys_copy)
+
+    # Failed incineration attempt on Beck Whitney resulted in them gaining stars
+    if (after['entityId'] == '7a75d626-d4fd-474f-a862-473138d8c376' and
+            after['validFrom'] == '2020-09-25T13:40:00.349Z'):
+        changed_keys_copy = changed_keys.copy()
+        changed_keys.clear()
+        yield UnknownTimeChangeSource(ChangeSourceType.FAILED_INCINERATION,
+                                      keys_changed=changed_keys_copy)
+
+    # Receivers talked through their rituals for a bit
+    if ('ritual' in changed_keys and 'permAttr' in after['data']
+            and 'RECEIVER' in after['data']['permAttr']):
+        changed_keys.remove('ritual')
+        yield UnknownTimeChangeSource(ChangeSourceType.RECEIVER_RITUALS,
+                                      keys_changed={'ritual'})
+
+    # Did they maybe have to add more players to the hall or something?
+    if after['validFrom'] == '2020-09-25T19:24:35.227636Z':
+        changed_keys_copy = changed_keys.copy()
+        changed_keys.clear()
+        # TODO what
+        yield UnknownTimeChangeSource(ChangeSourceType.UNKNOWN,
+                                      keys_changed=changed_keys_copy)
+
+    # Giant peanut shelled Wyatt Quitter
+    if (after['entityId'] == '5ca7e854-dc00-4955-9235-d7fcd732ddcf' and
+            after['validFrom'] == '2020-10-07T13:22:00.690582Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.GIANT_PEANUT_SHELLING,
+                                      keys_changed={'permAttr'})
+
+    # Formation of the Pods
+    if after['validFrom'] == '2020-10-11T02:24:00.397298Z':
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.JOINED_PODS,
+                                      keys_changed={'permAttr'})
+
+    # Shoe Thieves being cursed by god
+    if after['validFrom'] == '2020-10-11T02:48:00.112997Z':
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.CURSED_BY_GOD,
+                                      keys_changed={'permAttr'})
+
 
 def find_discipline_incin_replacement(before: Optional[JsonDict],
                                       after: JsonDict, changed_keys: Set[str]) \
@@ -490,10 +608,9 @@ def find_discipline_incin_victim(before: JsonDict, _: JsonDict,
 
     if len(possible_incins) == 1:
         incin = possible_incins.iloc[0]
-        changed_keys_copy = changed_keys.copy()
-        changed_keys.clear()
+        changed_keys.remove('deceased')
         yield GameEventChangeSource(ChangeSourceType.INCINERATED,
-                                    keys_changed=changed_keys_copy,
+                                    keys_changed={'deceased'},
                                     season=incin['season'],
                                     day=incin['day'],
                                     game=incin['game_id'],
@@ -502,25 +619,29 @@ def find_discipline_incin_victim(before: JsonDict, _: JsonDict,
         assert len(possible_incins) == 0
 
 
-def find_discipline_peanut(before: Optional[JsonDict], _: JsonDict,
-                           changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    if before is None:
-        return
+def find_discipline_simple_event(event_type: ChangeSourceType,
+                                 event_attrs: Set[str],
+                                 event_data: pd.DataFrame,
+                                 before: Optional[JsonDict],
+                                 _: JsonDict,
+                                 changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if event_changed_keys := changed_keys.intersection(event_attrs):
+        possible_events = get_events_from_record(event_data, before)
 
-    if peanut_changed_keys := changed_keys.intersection(PEANUT_ATTRS):
-        possible_nuts = get_events_from_record(discipline_peanuts, before)
-        if len(possible_nuts) == 1:
-            changed_keys.difference_update(peanut_changed_keys)
-            nut = possible_nuts.iloc[0]
-            yield GameEventChangeSource(ChangeSourceType.PEANUT,
-                                        keys_changed=peanut_changed_keys,
-                                        season=nut['season'],
-                                        day=nut['day'],
-                                        game=nut['game_id'],
-                                        perceived_at=nut['perceived_at'])
+        if len(possible_events) == 1:
+            changed_keys.difference_update(event_changed_keys)
+
+            event = possible_events.iloc[0]
+            yield GameEventChangeSource(event_type,
+                                        keys_changed=event_changed_keys,
+                                        season=event['season'],
+                                        day=event['day'],
+                                        game=event['game_id'],
+                                        perceived_at=event['perceived_at'])
         else:
-            # 2 peanuts in one chron update? inconceivable!
-            assert len(possible_nuts) == 0
+            # 2 events in one chron update? inconceivable!
+            assert len(possible_events) == 0
 
 
 # noinspection PyUnusedLocal
@@ -534,61 +655,70 @@ def find_discipline_feedback_fate(before: Optional[JsonDict], after: JsonDict,
         possible_feedbacks = discipline_feedbacks.query(
             '(player_id==@player_id or player_id_2==@player_id) and '
             'perceived_at>=@before_time and perceived_at<=@after_time')
-        if len(possible_feedbacks) == 1:
+        # There actually have been 2 feedbacks in one chron update (Flickering
+        # Eugenia Garbage). Assume it's the later one that caused the change.
+        if len(possible_feedbacks) > 0:
             changed_keys.discard('fate')
-            feedback = possible_feedbacks.iloc[0]
+            feedback = possible_feedbacks.iloc[-1]
             yield GameEventChangeSource(ChangeSourceType.FEEDBACK_FATE,
                                         keys_changed={'fate'},
                                         season=feedback['season'],
                                         day=feedback['day'],
                                         game=feedback['game_id'],
                                         perceived_at=feedback['perceived_at'])
-        else:
-            # 2 feedbacks in one chron update? inconceivable!
-            assert len(possible_feedbacks) == 0
 
 
-# noinspection PyUnusedLocal
 def find_discipline_blooddrain(before: Optional[JsonDict], after: JsonDict,
                                changed_keys: Set[str]) \
         -> Iterator[ChangeSource]:
     if before is None:
         return
-    possible_blooddrains = get_events_from_record(discipline_blooddrains,
-                                                  before)
-    if len(possible_blooddrains) == 1:
-        expected_keys = set()
-        blooddrain = possible_blooddrains.iloc[0]
-        if "hitting ability" in blooddrain['evt']:
-            expected_keys = {
-                'buoyancy', 'musclitude', 'moxie', 'divinity', 'patheticism',
-                'tragicness', 'martyrdom', 'thwackability'
-            }
-        elif "baserunning ability" in blooddrain['evt']:
-            expected_keys = {'continuation', 'groundFriction', 'laserlikeness',
-                             'baseThirst', 'indulgence'}
-        elif "pitching ability" in blooddrain['evt']:
-            expected_keys = {
-                'totalFingers', 'coldness', 'shakespearianism',
-                'unthwackability', 'overpowerment', 'suppression',
-                'ruthlessness'
-            }
-        elif "defensive ability" in blooddrain['evt']:
-            expected_keys = {'watchfulness', 'tenaciousness', 'omniscience',
-                             'anticapitalism', 'chasiness'}
-        else:
-            assert False
-        if blooddrain_changed_keys := changed_keys.intersection(expected_keys):
-            changed_keys.difference_update(blooddrain_changed_keys)
-            yield GameEventChangeSource(ChangeSourceType.BLOODDRAIN,
-                                        keys_changed=blooddrain_changed_keys,
-                                        season=blooddrain['season'],
-                                        day=blooddrain['day'],
-                                        game=blooddrain['game_id'],
-                                        perceived_at=blooddrain['perceived_at'])
-    else:
-        # 2 blooddrains in one chron update? inconceivable!
-        assert len(possible_blooddrains) == 0
+
+    possible_blooddrains_drained = get_events_from_record(
+        discipline_blooddrains, before, id_column='drained_id')
+    possible_blooddrains_drainer = get_events_from_record(
+        discipline_blooddrains, before, id_column='drainer_id')
+
+    # This is the draining player, so they don't get anything from blooddrains
+    # that just add an out, strike, etc.
+    possible_blooddrains_drainer = possible_blooddrains_drainer[
+        ~possible_blooddrains_drainer['evt'].str.contains(
+            "ability to (:?add|remove) a")
+    ]
+    for possible_blooddrains in (possible_blooddrains_drained,
+                                 possible_blooddrains_drainer):
+        for _, blooddrain in possible_blooddrains.iterrows():
+            if "hitting ability" in blooddrain['evt']:
+                expected_keys = {
+                    'buoyancy', 'musclitude', 'moxie', 'divinity',
+                    'patheticism', 'tragicness', 'martyrdom', 'thwackability',
+                    'hittingRating'
+                }
+            elif "baserunning ability" in blooddrain['evt']:
+                expected_keys = {
+                    'continuation', 'groundFriction', 'laserlikeness',
+                    'baseThirst', 'indulgence', 'baseRunningRating'
+                }
+            elif "pitching ability" in blooddrain['evt']:
+                expected_keys = {
+                    'totalFingers', 'coldness', 'shakespearianism',
+                    'unthwackability', 'overpowerment', 'suppression',
+                    'ruthlessness', 'pitchingRating'
+                }
+            elif "defensive ability" in blooddrain['evt']:
+                expected_keys = {'watchfulness', 'tenaciousness', 'omniscience',
+                                 'anticapitalism', 'chasiness', 'defenseRating'}
+            else:
+                assert False
+            if drain_changed_keys := changed_keys.intersection(expected_keys):
+                changed_keys.difference_update(drain_changed_keys)
+                yield GameEventChangeSource(
+                    ChangeSourceType.BLOODDRAIN,
+                    keys_changed=drain_changed_keys,
+                    season=blooddrain['season'],
+                    day=blooddrain['day'],
+                    game=blooddrain['game_id'],
+                    perceived_at=blooddrain['perceived_at'])
 
 
 def find_discipline_weekly_mod_change(before: JsonDict, after: JsonDict,
@@ -666,6 +796,92 @@ def find_discipline_weekly_mod_change(before: JsonDict, after: JsonDict,
         raise RuntimeError("Can't find source of weekly mod " + mod_name)
 
 
+def find_discipline_unshelling(before: Optional[JsonDict], after: JsonDict,
+                               changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if unshelling_changed_keys := changed_keys.intersection(
+            {'peanutAllergy', 'permAttr'}):
+        possible_unshellings = get_events_from_record(discipline_unshellings,
+                                                      before)
+
+        if len(possible_unshellings) == 1:
+            changed_keys.discard('peanutAllergy')
+
+            # Only mark permAttr as accounted for if superallergic was the only
+            # change
+            added_mods = (set(after['data']['permAttr']) -
+                          set(before['data']['permAttr']))
+            if not added_mods or added_mods == {'SUPERALLERGIC'}:
+                changed_keys.remove('permAttr')
+
+            unshelling = possible_unshellings.iloc[0]
+            yield GameEventChangeSource(ChangeSourceType.UNSHELLING,
+                                        keys_changed=unshelling_changed_keys,
+                                        season=unshelling['season'],
+                                        day=unshelling['day'],
+                                        game=unshelling['game_id'],
+                                        perceived_at=unshelling['perceived_at'])
+        else:
+            # 2 unshellings in one chron update? inconceivable!
+            assert len(possible_unshellings) == 0
+
+
+def find_discipline_spicy(before: Optional[JsonDict], after: JsonDict,
+                          changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    changed_mods = set(before['data']['permAttr']).symmetric_difference(
+        after['data']['permAttr'])
+    if changed_mods.issubset({'HEATING_UP', 'ON_FIRE'}):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.SPICY,
+                                      keys_changed={'permAttr'})
+
+
+def find_discipline_magmatic(before: Optional[JsonDict], after: JsonDict,
+                             changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    mods_before = set(before['data']['permAttr'])
+    mods_after = set(after['data']['permAttr'])
+    if mods_after - mods_before == {'MAGMATIC'}:
+        possible_flame_eatings = get_events_from_record(
+            discipline_flame_eatings, before)
+
+        if len(possible_flame_eatings) == 1:
+            changed_keys.discard('permAttr')
+
+            hit = possible_flame_eatings.iloc[0]
+            yield GameEventChangeSource(ChangeSourceType.ATE_FIRE,
+                                        keys_changed={'permAttr'},
+                                        season=hit['season'],
+                                        day=hit['day'],
+                                        game=hit['game_id'],
+                                        perceived_at=hit['perceived_at'])
+        else:
+            assert len(possible_flame_eatings) == 0
+    elif mods_before - mods_after == {'MAGMATIC'}:
+        possible_magmatic_hits = get_events_from_record(
+            discipline_magmatic_hits, before)
+
+        if len(possible_magmatic_hits) == 1:
+            changed_keys.discard('permAttr')
+
+            hit = possible_magmatic_hits.iloc[0]
+            yield GameEventChangeSource(ChangeSourceType.HIT_MAGMATIC_HOME_RUN,
+                                        keys_changed={'permAttr'},
+                                        season=hit['season'],
+                                        day=hit['day'],
+                                        game=hit['game_id'],
+                                        perceived_at=hit['perceived_at'])
+        else:
+            assert len(possible_magmatic_hits) == 0
+
+
 def time_str(timestamp: datetime):
     return timestamp.isoformat().replace('+00:00', 'Z')
 
@@ -709,16 +925,23 @@ CHANGE_FINDERS = [
     # Discipline scheduled events
     find_discipline_election,
     find_discipline_idolboard_mod,
+    find_discipline_postseason_birth,
 
     # Discipline in-game events
     find_discipline_rare_events,
     # Replacement first so the other finders can assume `before` is populated
     find_discipline_incin_replacement,
     find_discipline_incin_victim,
-    find_discipline_peanut,
+    partial(find_discipline_simple_event,
+            ChangeSourceType.PEANUT, PEANUT_ATTRS, discipline_peanuts),
     find_discipline_feedback_fate,
     find_discipline_blooddrain,
     find_discipline_weekly_mod_change,
+    find_discipline_unshelling,
+    partial(find_discipline_simple_event,
+            ChangeSourceType.PARTY, PARTY_ATTRS, discipline_parties),
+    find_discipline_spicy,
+    find_discipline_magmatic,
 
     # Feed finder handles everything(?) after discipline
     find_from_feed,

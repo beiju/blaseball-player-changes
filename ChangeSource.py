@@ -101,6 +101,43 @@ class ChangeSourceType(Enum):
     # player
     UNSTABLE_CHAIN = auto()
 
+    # Birds sometimes peck shelled players free
+    UNSHELLING = auto()
+
+    # If a team needs to play a game but they have no active (i.e. not Shelled,
+    # Elsewhere, etc.) pitchers, a Pitching Machine is created and added to
+    # their rotation
+    PITCHING_MACHINE_CREATED = auto()
+
+    # Spicy works by adding and removing some spicy-specific mods
+    SPICY = auto()
+
+    # In the Discipline era, or perhaps just because of the Iffey Jr., a failed
+    # incineration resulted in the target gainign stars
+    FAILED_INCINERATION = auto()
+
+    # The mic spoke to us through the Receivers' rituals
+    RECEIVER_RITUALS = auto()
+
+    # For a short time giant peanuts would fall to the ground and exactly once
+    # it hit a player, Wyatt Quitter
+    GIANT_PEANUT_SHELLING = auto()
+
+    # When a team makes the playoffs they get a player added to their shadows
+    POSTSEASON_BIRTH = auto()
+
+    # Shelled players became Honey Roasted when they joined the pods
+    JOINED_PODS = auto()
+
+    # When you lose to a God team, you become cursed
+    CURSED_BY_GOD = auto()
+
+    # Fire Eaters become Magmatic when they eat fire
+    ATE_FIRE = auto()
+
+    # Fire Eaters use up their Magmatic when they hit the Magmatic homer
+    HIT_MAGMATIC_HOME_RUN = auto()
+
 
 @dataclass
 class ChangeSource:
@@ -133,5 +170,5 @@ class ElectionChangeSource(ChangeSource):
 
 
 @dataclass
-class IdolBoardChangeSource(ChangeSource):
+class EndseasonChangeSource(ChangeSource):
     season: int
