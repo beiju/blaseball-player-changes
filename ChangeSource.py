@@ -76,14 +76,9 @@ class ChangeSourceType(Enum):
     # Players eat peanuts sometimes, often inadvisedly
     PEANUT = auto()
 
-    # In the discipline era players weren't generated with a blood type. This
-    # change is their blood type being granted.
-    FIRST_BLOOD = auto()
-
-    # In the discipline era players weren't generated with coffee and rituals.
-    # They were added after some time
-    # TODO First blood is part of interview for all but 2 records. What's up
-    #   with that?
+    # In the discipline era players weren't generated with coffee, blood, and
+    # rituals (the three attributes added by the Interviews decree). They were
+    # generated after some time
     INTERVIEW = auto()
 
     # When players get feedbacked, sometimes they change(d?) fate
@@ -102,6 +97,10 @@ class ChangeSourceType(Enum):
     # The idol board sometimes bestows mods, e.g. Shelled
     IDOLBOARD_MOD = auto()
 
+    # When an Unstable player is incinerated the instability chains to another
+    # player
+    UNSTABLE_CHAIN = auto()
+
 
 @dataclass
 class ChangeSource:
@@ -116,6 +115,14 @@ class UnknownTimeChangeSource(ChangeSource):
 
 @dataclass
 class GameEventChangeSource(ChangeSource):
+    season: int
+    day: int
+    game: str
+    perceived_at: str  # should this be datetime?
+
+
+@dataclass
+class GameEndChangeSource(ChangeSource):
     season: int
     day: int
 
