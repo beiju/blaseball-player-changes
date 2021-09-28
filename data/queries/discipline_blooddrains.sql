@@ -28,4 +28,18 @@ join data.players draining_pl on draining_pl.player_id=draining_tr.player_id
 where games.season < 11
 	and position(draining_pl.player_name || ' siphoned some of ' in ge.evt) > 0
 	and position('siphoned some of ' || drained_pl.player_name || '''s' in ge.evt) > 0
+
+-- These damn players can't stop doing weather during boss fights and I have to
+-- hard code it all
+union select
+	'The Blooddrain gurgled! Workman Gloom siphoned some of Jessica Telephone''s defensive ability!' as evt,
+	timestamp without time zone '2020-10-18T00:44:39.628584' as perceived_at,
+	'9bb560d9-4925-4845-ad03-26012742ee23' as game_id,
+	9 as season,
+	-1 as day,
+	'bd4c6837-eeaa-4675-ae48-061efa0fd11a' as drainer_id,
+	'Workman Gloom' as drainer_name,
+	'083d09d4-7ed3-4100-b021-8fbe30dd43e8' as drained_id,
+	'Jessica Telephone' as drained_name
+
 order by perceived_at

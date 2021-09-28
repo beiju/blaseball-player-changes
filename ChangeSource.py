@@ -126,7 +126,7 @@ class ChangeSourceType(Enum):
     # When a team makes the playoffs they get a player added to their shadows
     POSTSEASON_BIRTH = auto()
 
-    # Shelled players became Honey Roasted when they joined the pods
+    # Shelled players became Honey Roasted when they joined the Pods
     JOINED_PODS = auto()
 
     # When you lose to a God team, you become cursed
@@ -137,6 +137,17 @@ class ChangeSourceType(Enum):
 
     # Fire Eaters use up their Magmatic when they hit the Magmatic homer
     HIT_MAGMATIC_HOME_RUN = auto()
+
+    # Players stopped being deceased and became squiddish when they joined the
+    # Hall Stars
+    JOINED_HALL_STARS = auto()
+
+    # Players leaving a team with Loyalty will gain the Saboteur modification.
+    LOYALTY = auto()
+
+    # Players leaving a Team with Subjection will gain the Liberated
+    # modification.
+    SUBJECTION = auto()
 
 
 @dataclass

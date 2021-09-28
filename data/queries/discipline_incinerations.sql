@@ -186,4 +186,17 @@ union select 'Rogue Umpire incinerated Garages hitter Shaquille Torres! Replaced
 	'Derrick Krueger' as victim_name,
 	'c6e2e389-ed04-4626-a5ba-fe398fe89568' as replacement_id,
 	'Henry Marshallow' as replacement_name
+
+-- Seb died (again) during Day X, which was not technically a game
+union select 'A Debt was collected. Rogue Umpire incinerated Hall Stars hitter Sebastian Telephone! Replaced by Hall of Flame player Scrap Murphy The Instability chains to the Hall Stars''s Randall Marijuana!' as evt,
+	-- Date from the fights version of the same chron system that powers the datablase
+	timestamp without time zone '2020-10-18T00:49:35.642524Z' as perceived_at,
+	'9bb560d9-4925-4845-ad03-26012742ee23' as game_id,
+	9 as season,
+	-1 as day,
+	'14d88771-7a96-48aa-ba59-07bae1733e96' as victim_id,
+	'Sebastian Telephone' as victim_name,
+	'40db1b0b-6d04-4851-adab-dd6320ad2ed9' as replacement_id,
+	'Scrap Murphy' as replacement_name
+
 order by perceived_at
