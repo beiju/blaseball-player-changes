@@ -33,13 +33,21 @@ INTERVIEW_ATTRS = {'blood', 'coffee', 'ritual'}
 IDOLBOARD_ATTRS = {'permAttr', 'seasAttr', 'deceased'}
 
 # Set of sets of attributes that were added at once
-NEW_ATTR_SETS = {
-    frozenset({'cinnamon', 'bat', 'fate', 'peanutAllergy'}),
-    frozenset({'hittingRating', 'baserunningRating',
-               'defenseRating', 'pitchingRating'}),
-    frozenset({'armor', 'coffee', 'ritual', 'blood'}),
-    frozenset({'seasAttr', 'permAttr', 'gameAttr', 'weekAttr'}),
-}
+NEW_ATTR_SETS = [
+    # Season 2 elections
+    {'cinnamon', 'bat', 'fate', 'peanutAllergy'},
+    # Behind-the-scenes
+    {'hittingRating', 'baserunningRating', 'defenseRating', 'pitchingRating'},
+    # Interviews elections
+    {'armor', 'coffee', 'ritual', 'blood'},
+    # Behind-the-scenes
+    {'seasAttr', 'permAttr', 'gameAttr', 'weekAttr'},
+    # Dead players who then play get cinnamon and fate together without bat and
+    # peanutAllergy, for some reason
+    {'cinnamon', 'fate'},
+    # Before Coffee Cup
+    {'tournamentTeamId', 'leagueTeamId'}
+]
 
 # These elections will be handled manually once I figure out the election format
 DISCIPLINE_ELECTION_TIMES = {
@@ -54,6 +62,8 @@ DISCIPLINE_ELECTION_TIMES = {
     6: ('2020-09-20T19:20:01', '2020-09-21T07:46:00'),
     7: ('2020-09-27T19:02:00', '2020-09-27T19:12:00'),
     8: ('2020-10-11T19:02:00', '2020-10-11T19:12:00'),
+    # Did this one also need to be fixed manually?
+    9: ('2020-10-18T19:00:13', '2020-10-18T21:51:00'),
 }
 
 DISCIPLINE_ENDSEASON_TIMES = {
@@ -62,6 +72,7 @@ DISCIPLINE_ENDSEASON_TIMES = {
     7: ('2020-09-25T19:15:33', '2020-09-25T19:25:33'),
     8: ('2020-10-09T19:00:00', '2020-10-09T19:10:00'),
     9: ('2020-10-16T20:00:00', '2020-10-16T20:10:00'),
+    10: ('2020-10-23T19:36:08', '2020-10-23T19:38:08'),
 }
 
 EPS = 1e-10
@@ -284,6 +295,32 @@ def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'permAttr'})
 
+    # Changing Pudge's last name for cultural sensitivity I think
+    if (after['entityId'] == 'cc11963b-a05b-477b-b154-911dc31960df' and
+            after['validFrom'] == '2020-10-18T21:52:14.633174Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # Changing Lotus's last name for cultural sensitivity I think
+    if (after['entityId'] == '9f218ed1-d793-437d-a1b9-79f88f69154d' and
+            after['validFrom'] == '2020-10-19T01:34:00.125772Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
+    # Renaming the Ulrachers because the namesake is shitty
+    if (after['entityId'] == 'ad8d15f4-e041-4a12-a10e-901e6285fdc5' and
+            after['validFrom'] == '2020-10-19T19:36:00.432991Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+    if (after['entityId'] == 'cbd19e6f-3d08-4734-b23f-585330028665' and
+            after['validFrom'] == '2020-10-19T19:36:00.721737Z'):
+        changed_keys.remove('name')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'name'})
+
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
                      changed_keys: Set[str]) -> Iterator[ChangeSource]:
@@ -409,7 +446,7 @@ def find_new_attributes(before: Optional[JsonDict], _: JsonDict,
 
     for attr_set in NEW_ATTR_SETS:
         if (attr_set.issubset(changed_keys) and
-                all(before['data'].get(key, 0) == 0 for key in attr_set)):
+                all(not before['data'].get(key, None) for key in attr_set)):
             [changed_keys.discard(attr) for attr in attr_set]
             yield UnknownTimeChangeSource(ChangeSourceType.ADDED_ATTRIBUTES,
                                           keys_changed=set(attr_set))
@@ -463,7 +500,7 @@ def find_fateless_fated(before: Optional[JsonDict], after: JsonDict,
                                       keys_changed={'fate'})
 
 
-def find_interview(before: Optional[JsonDict], _: JsonDict,
+def find_interview(before: Optional[JsonDict], after: JsonDict,
                    changed_keys: Set[str]) -> Iterator[ChangeSource]:
     if before is None:
         return
@@ -472,7 +509,7 @@ def find_interview(before: Optional[JsonDict], _: JsonDict,
     # it was missing or falsy, and you do have it now
     interview_changed_keys = {
         attr for attr in INTERVIEW_ATTRS
-        if attr not in changed_keys or not before['data'][attr]
+        if attr in changed_keys and not before['data'][attr]
     }
     if interview_changed_keys:
         changed_keys.difference_update(interview_changed_keys)
@@ -615,8 +652,9 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.JOINED_PODS,
                                       keys_changed={'permAttr'})
 
-    # Shoe Thieves being cursed by god
-    if (after['validFrom'] == '2020-10-11T02:48:00.112997Z' and
+    # Shoe Thieves/Crabs being cursed by god
+    if ((after['validFrom'] == '2020-10-18T01:08:00.640182Z' or
+         after['validFrom'] == '2020-10-11T02:48:00.112997Z') and
             (new_mods == {'FLINCH'} or new_mods == {'WILD'})):
         changed_keys.remove('permAttr')
         yield UnknownTimeChangeSource(ChangeSourceType.CURSED_BY_GOD,
@@ -633,12 +671,22 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.JOINED_HALL_STARS,
                                       keys_changed=keys)
 
-        added_attrs = {key for key in changed_keys
-                       if not before['data'].get(key, 0)}
-        if added_attrs:
-            changed_keys.difference_update(added_attrs)
-            yield UnknownTimeChangeSource(ChangeSourceType.ADDED_ATTRIBUTES,
-                                          keys_changed=added_attrs)
+    # Seasonal player mods wore off. If this happened more than once I will
+    # come back and write it properly
+    if ((after['entityId'] == '4b3e8e9b-6de1-4840-8751-b1fb45dc5605' and
+         after['validFrom'] == '2020-10-18T01:08:00.34729Z') or
+            (after['entityId'] == 'f0bcf4bb-74b3-412e-a54c-04c12ad28ecb' and
+             after['validFrom'] == '2020-10-18T01:08:00.500529Z')):
+        changed_keys.remove('seasAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.SEASONAL_MODS_WEAR_OFF,
+                                      keys_changed={'seasAttr'})
+
+    # Hall Stars Released
+    if (new_mods == {'RETIRED'} and
+            after['validFrom'] == '2020-10-18T19:00:01.291576Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.HALL_STARS_RELEASED,
+                                      keys_changed={'permAttr'})
 
 
 def find_discipline_incin_replacement(before: Optional[JsonDict],
@@ -994,6 +1042,19 @@ def find_discipline_magmatic(before: Optional[JsonDict], after: JsonDict,
             assert len(possible_magmatic_hits) == 0
 
 
+def find_discipline_haunt(before: Optional[JsonDict], after: JsonDict,
+                          changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    if (set(before['data']['permAttr'])
+            .symmetric_difference(after['data']['permAttr']) == {'INHABITING'}):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.INHABITING,
+                                      keys_changed={'permAttr'})
+
+
 def time_str(timestamp: datetime):
     return timestamp.isoformat().replace('+00:00', 'Z')
 
@@ -1054,6 +1115,7 @@ CHANGE_FINDERS = [
             ChangeSourceType.PARTY, PARTY_ATTRS, discipline_parties),
     find_discipline_spicy,
     find_discipline_magmatic,
+    find_discipline_haunt,
 
     # Feed finder handles everything(?) after discipline
     find_from_feed,

@@ -149,6 +149,15 @@ class ChangeSourceType(Enum):
     # modification.
     SUBJECTION = auto()
 
+    # Seasonal mods wear off at the end of every season
+    SEASONAL_MODS_WEAR_OFF = auto()
+
+    # The Hall Stars were Released
+    HALL_STARS_RELEASED = auto()
+
+    # Ghosts can Inhabit Haunted players
+    INHABITING = auto()
+
 
 @dataclass
 class ChangeSource:
