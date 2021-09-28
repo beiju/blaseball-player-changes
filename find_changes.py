@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta, datetime
 from functools import partial
 from typing import List, Optional, Set, Iterator
@@ -31,6 +32,22 @@ PARTY_ATTRS = {'thwackability', 'buoyancy', 'musclitude', 'continuation',
 PEANUT_ATTRS = PARTY_ATTRS.union({'totalFingers'}).difference({'cinnamon'})
 INTERVIEW_ATTRS = {'blood', 'coffee', 'ritual'}
 IDOLBOARD_ATTRS = {'permAttr', 'seasAttr', 'deceased'}
+BLOODDRAIN_HITTING_ATTR = {
+    'buoyancy', 'musclitude', 'moxie', 'divinity',
+    'patheticism', 'tragicness', 'martyrdom', 'thwackability',
+    'hittingRating'
+}
+BLOODDRAIN_BASERUNNING_ATTR = {
+    'continuation', 'groundFriction', 'laserlikeness',
+    'baseThirst', 'indulgence', 'baserunningRating'
+}
+BLOODDRAIN_PITCHING_ATTR = {
+    'totalFingers', 'coldness', 'shakespearianism',
+    'unthwackability', 'overpowerment', 'suppression',
+    'ruthlessness', 'pitchingRating'
+}
+BLOODDRAIN_DEFENSE_ATTR = {'watchfulness', 'tenaciousness', 'omniscience',
+                           'anticapitalism', 'chasiness', 'defenseRating'}
 
 # Set of sets of attributes that were added at once
 NEW_ATTR_SETS = [
@@ -97,6 +114,10 @@ discipline_parties = pd.read_csv('data/discipline_parties.csv')
 discipline_flame_eatings = pd.read_csv('data/discipline_flame_eatings.csv')
 discipline_magmatic_hits = pd.read_csv('data/discipline_magmatic_hits.csv')
 
+GET_EVENTS_CACHE = {}
+
+SIPHON_BLOODDRAIN_RE = re.compile(r"ability to (?:add|remove) a")
+
 DAY_X_FEEDBACKS = {
     # player update time: game event time
     '2020-10-18T00:44:00.159765Z': '2020-10-18T00:42:51.585707Z',
@@ -144,11 +165,9 @@ def get_change(after):
         if not changed_keys:
             return Change(before, after, sources)
 
-    return Change(before, after, [
-        UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
-    ])
-    # This is to have the game in the local variable for debugging
-    games = get_game(after['entityId'], after['validFrom'])
+    # return Change(before, after, [
+    #     UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
+    # ])
     raise RuntimeError("Can't identify change")
 
 
@@ -166,13 +185,24 @@ def get_events_from_record(data: pd.DataFrame, before: dict,
 def get_events(data: pd.DataFrame, player_id: str, before_time: str,
                after_time: str, id_column: Optional[str] = 'player_id') \
         -> pd.DataFrame:
-    # Using python magic, these @ strings reference the function parameters
-    q = 'perceived_at>=@before_time and perceived_at<=@after_time'
+    if id_column is None:
+        return data[(data['perceived_at'] >= before_time) &
+                    (data['perceived_at'] <= after_time)]
 
-    if id_column is not None:
-        q = f'{id_column}==@player_id and {q}'
+    cache_key = (id(data), id_column)
+    try:
+        cached_frame = GET_EVENTS_CACHE[cache_key]
+    except KeyError:
+        cached_frame = {
+            k: data.iloc[idx].set_index('perceived_at', drop=False)
+            for k, idx in data.groupby(id_column, as_index=True).groups.items()}
+        GET_EVENTS_CACHE[cache_key] = cached_frame
 
-    return data.query(q)
+    try:
+        player_data = cached_frame[player_id]
+    except KeyError:
+        return data.iloc[0:0]  # Empty data frame
+    return player_data[before_time:after_time]
 
 
 def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
@@ -802,40 +832,24 @@ def find_discipline_blooddrain(before: Optional[JsonDict], after: JsonDict,
     if before is None:
         return
 
-    possible_blooddrains_drained = get_events_from_record(
-        discipline_blooddrains, before, id_column='drained_id')
-    possible_blooddrains_drainer = get_events_from_record(
-        discipline_blooddrains, before, id_column='drainer_id')
-
-    # This is the draining player, so they don't get anything from blooddrains
-    # that just add an out, strike, etc.
-    possible_blooddrains_drainer = possible_blooddrains_drainer[
-        ~possible_blooddrains_drainer['evt'].str.contains(
-            "ability to (?:add|remove) a")
-    ]
-    for possible_blooddrains in (possible_blooddrains_drained,
-                                 possible_blooddrains_drainer):
+    for id_column in ('drainer_id', 'drained_id'):
+        possible_blooddrains = get_events_from_record(discipline_blooddrains,
+                                                      before, id_column)
         for _, blooddrain in possible_blooddrains.iterrows():
+            # The draining player doesn't get any stat change from blooddrains
+            # that just add an out, strike, etc.
+            if (id_column == 'drainer_id' and
+                    SIPHON_BLOODDRAIN_RE.search(blooddrain['evt'])):
+                continue
+
             if "hitting ability" in blooddrain['evt']:
-                expected_keys = {
-                    'buoyancy', 'musclitude', 'moxie', 'divinity',
-                    'patheticism', 'tragicness', 'martyrdom', 'thwackability',
-                    'hittingRating'
-                }
+                expected_keys = BLOODDRAIN_HITTING_ATTR
             elif "baserunning ability" in blooddrain['evt']:
-                expected_keys = {
-                    'continuation', 'groundFriction', 'laserlikeness',
-                    'baseThirst', 'indulgence', 'baserunningRating'
-                }
+                expected_keys = BLOODDRAIN_BASERUNNING_ATTR
             elif "pitching ability" in blooddrain['evt']:
-                expected_keys = {
-                    'totalFingers', 'coldness', 'shakespearianism',
-                    'unthwackability', 'overpowerment', 'suppression',
-                    'ruthlessness', 'pitchingRating'
-                }
+                expected_keys = BLOODDRAIN_PITCHING_ATTR
             elif "defensive ability" in blooddrain['evt']:
-                expected_keys = {'watchfulness', 'tenaciousness', 'omniscience',
-                                 'anticapitalism', 'chasiness', 'defenseRating'}
+                expected_keys = BLOODDRAIN_DEFENSE_ATTR
             else:
                 assert False
             if drain_changed_keys := changed_keys.intersection(expected_keys):

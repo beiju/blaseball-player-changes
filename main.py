@@ -6,6 +6,12 @@ from find_changes import get_change, session
 # CHRON_VERSIONS_URL = "http://127.0.0.1:8000/vcr/v2/versions"
 CHRON_VERSIONS_URL = "https://api.sibr.dev/chronicler/v2/versions"
 
+# Don't print these changes because they clutter up the output
+IGNORED_EVENTS = {
+    ChangeSourceType.TRAJ_RESET,
+    ChangeSourceType.HITS_TRACKER,
+}
+
 
 def main():
     outputs = map(get_change, paged_get_lazy(CHRON_VERSIONS_URL, {
@@ -13,19 +19,13 @@ def main():
         'order': 'asc',
     }, session))
 
-    # Just to consume iterator
     for i, val in enumerate(outputs):
-        # Don't print these changes because they clutter up the output
-        if (len(val.sources) == 1 and val.sources[0].source_type in {
-            ChangeSourceType.TRAJ_RESET,
-            ChangeSourceType.HITS_TRACKER,
-        }):
+        val.sources = [s for s in val.sources
+                       if s.source_type not in IGNORED_EVENTS]
+        if not val.sources:
             continue
 
-        if val is not None:
-            print(i, val.after['name'], val.valid_from, val.sources)
-        else:
-            print(i, None)
+        print(i, val.after['name'], val.valid_from, val.sources)
 
 
 # Press the green button in the gutter to run the script.
