@@ -158,6 +158,31 @@ class ChangeSourceType(Enum):
     # Ghosts can Inhabit Haunted players
     INHABITING = auto()
 
+    # Sometimes attributes are changed without updating the computed stars. Then
+    # the stars are updated later, perhaps the next time the player is touched.
+    DELAYED_STAR_RECALCULATION = auto()
+
+    # Lots of players were generated for the coffee cup
+    COFFEE_CUP_BIRTH = auto()
+
+    # In Coffee 1 weather, players can be Beaned and gain/lose Tired and Wired
+    COFFEE_BEAN = auto()
+
+    # In the Coffee Cup, players with Observed could be Percolated. This is
+    # different to the effect of Observed during the Expansion Era
+    PERCOLATION = auto()
+
+    # In Coffee 2 weather, players can be Poured Over to gain a Free Refill and
+    # then use it to refill an in
+    FREE_REFILL = auto()
+
+    # In Coffee 3 weather, both starting pitchers gain Triple Threat. They then
+    # have a change to lose it at the bottom of the 3rd inning in every game
+    TRIPLE_THREAT = auto()
+
+    # When Inter Xpresso won the Coffee Cup, their players all gained Perk
+    WON_TOURNAMENT = auto()
+
 
 @dataclass
 class ChangeSource:

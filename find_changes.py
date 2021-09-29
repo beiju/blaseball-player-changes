@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from datetime import timedelta, datetime
 from functools import partial
 from typing import List, Optional, Set, Iterator
@@ -16,8 +17,7 @@ from ChangeSource import ChangeSource, ChangeSourceType, \
 
 # CHRON_START_DATE = '2020-09-13T19:20:00Z'
 CHRON_START_DATE = '2020-07-29T08:12:22'
-CHRON_VERSIONS_URL = "https://api.sibr.dev/chronicler/v2/versions"
-CHRON_GAMES_URL = 'https://api.sibr.dev/chronicler/v1/games'
+FEED_START_DATE = '2021-03-01T03:37:36+00:00'
 
 NEGATIVE_ATTRS = {'tragicness', 'patheticism'}
 PARTY_ATTRS = {'thwackability', 'buoyancy', 'musclitude', 'continuation',
@@ -63,7 +63,11 @@ NEW_ATTR_SETS = [
     # peanutAllergy, for some reason
     {'cinnamon', 'fate'},
     # Before Coffee Cup
-    {'tournamentTeamId', 'leagueTeamId'}
+    {'tournamentTeamId', 'leagueTeamId'},
+    {'leagueTeamId'},
+    {'tournamentTeamId'},
+    # Before season 12
+    {'eDensity', 'state', 'evolution'}
 ]
 
 # These elections will be handled manually once I figure out the election format
@@ -102,6 +106,7 @@ team_rosters = pd.read_csv('data/team_rosters.csv')
 modifications = pd.read_csv('data/modifications.csv', index_col='modification')
 prev_for_player = {}
 creeping_peanut = {}
+delayed_updates = defaultdict(lambda: set())
 
 discipline_incinerations = pd.read_csv('data/discipline_incinerations.csv')
 discipline_peanuts = pd.read_csv('data/discipline_peanuts.csv')
@@ -113,6 +118,14 @@ discipline_unshellings = pd.read_csv('data/discipline_unshellings.csv')
 discipline_parties = pd.read_csv('data/discipline_parties.csv')
 discipline_flame_eatings = pd.read_csv('data/discipline_flame_eatings.csv')
 discipline_magmatic_hits = pd.read_csv('data/discipline_magmatic_hits.csv')
+coffee_cup_coffee_beans = pd.read_csv('data/coffee_cup_coffee_beans.csv')
+coffee_cup_percolations = pd.read_csv('data/coffee_cup_percolations.csv')
+coffee_cup_refill_gained = pd.read_csv('data/coffee_cup_free_refill_gained.csv')
+coffee_cup_refill_used = pd.read_csv('data/coffee_cup_free_refill_used.csv')
+coffee_cup_gain_triple_threat = \
+    pd.read_csv('data/coffee_cup_gain_triple_threat.csv')
+coffee_cup_lose_triple_threat = \
+    pd.read_csv('data/coffee_cup_lose_triple_threat.csv')
 
 GET_EVENTS_CACHE = {}
 
@@ -162,12 +175,16 @@ def get_change(after):
             assert not type(source) is ChangeSource
             sources.append(source)
 
+            # If a delayed update is accounted for, remove it from the list
+            delayed_updates[after['entityId']].difference_update(
+                source.keys_changed)
+
         if not changed_keys:
             return Change(before, after, sources)
 
-    # return Change(before, after, [
-    #     UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
-    # ])
+    return Change(before, after, [
+        UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
+    ])
     raise RuntimeError("Can't identify change")
 
 
@@ -350,6 +367,57 @@ def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
         changed_keys.remove('name')
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'name'})
+
+    # Tommy Drac's and Beans McBlase's trial settlement, except they gave it
+    # to the wrong McBlase (Evelton)
+    if ((after['entityId'] == '4b3e8e9b-6de1-4840-8751-b1fb45dc5605' or
+         after['entityId'] == 'a5f8ce83-02b2-498c-9e48-533a1d81aebf') and
+            after['validFrom'] == '2020-11-16T17:15:00.861234Z'):
+        changed_keys.remove('laserlikeness')
+        changed_keys.remove('baseThirst')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'laserlikeness',
+                                                    'baseThirst'})
+        delayed_updates[after['entityId']].add('baserunningRating')
+
+    # I'm defining the coffee cup births as manual-ish
+    if (before is None and
+            '2020-11-16T17:22:43' < after['validFrom'] < '2020-11-17T07:30:02'):
+        changed_keys_copy = changed_keys.copy()
+        changed_keys.clear()
+        yield UnknownTimeChangeSource(ChangeSourceType.COFFEE_CUP_BIRTH,
+                                      keys_changed=changed_keys_copy)
+
+    # Beans McBlase's actual trial settlement this time
+    if (after['entityId'] == 'dddb6485-0527-4523-9bec-324a5b66bf37' and
+            after['validFrom'] == '2020-11-17T03:15:00.925108Z'):
+        changed_keys.remove('laserlikeness')
+        changed_keys.remove('baseThirst')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'laserlikeness',
+                                                    'baseThirst'})
+        delayed_updates[after['entityId']].add('baserunningRating')
+
+    # Changeup Liu given Observed mod. All other Real Game Band players were
+    # given the mod at generation
+    if (after['entityId'] == '82d5e79d-e125-4460-b1fa-d046ad7739e0' and
+            after['validFrom'] == '2020-11-17T18:00:01.271342Z'):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'permAttr'})
+
+    if before is None:
+        return
+
+    new_mods = (set(after['data'].get('permAttr', [])) -
+                set(before['data'].get('permAttr', [])))
+
+    # Coffee Cup special players given NON_IDOLIZED
+    if (after['validFrom'].startswith('2021-03-01T04:15:') and
+            new_mods == {'NON_IDOLIZED'}):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
+                                      keys_changed={'permAttr'})
 
 
 def find_chron_start(before: Optional[JsonDict], after: JsonDict,
@@ -547,6 +615,26 @@ def find_interview(before: Optional[JsonDict], after: JsonDict,
                                       keys_changed=interview_changed_keys)
 
 
+def time_str(timestamp: datetime):
+    return timestamp.isoformat().replace('+00:00', 'Z')
+
+
+def find_from_feed(before: JsonDict, after: JsonDict,
+                   changed_keys: Set[str]) -> Iterator[ChangeSource]:
+    if after['validFrom'] < FEED_START_DATE:
+        return
+
+    timestamp = isoparse(after['validFrom'])
+    events = feed_search(cache_time=None, limit=-1, query={
+        'playerTags': after['entityId'],
+        'before': time_str(timestamp - timedelta(seconds=180)),
+        'after': time_str(timestamp + timedelta(seconds=180)),
+    })
+    for event in events:
+        pass
+        yield None
+
+
 def find_discipline_election(_: JsonDict, after: JsonDict,
                              changed_keys: Set[str]) -> Iterator[ChangeSource]:
     for season, (start_time, end_time) in DISCIPLINE_ELECTION_TIMES.items():
@@ -599,6 +687,17 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
             after['validFrom'] == '2020-09-21T16:00:00.646Z'):
         changed_keys_copy = changed_keys.copy()
         changed_keys.clear()
+        yield UnknownTimeChangeSource(ChangeSourceType.PITCHING_MACHINE_CREATED,
+                                      keys_changed=changed_keys_copy)
+
+    # Birth of Electric Kettle
+    # Yeah, the coffee cup is not discipline era, but I want to be able to
+    # assume before is not None for the rest of the finders
+    if (after['entityId'] == 'a11242ae-936a-46b4-9101-be2cabafeed4' and
+            after['validFrom'] == '2020-11-18T00:10:00.235845Z'):
+        changed_keys_copy = changed_keys.copy()
+        changed_keys.clear()
+        # Making a stand here: Electric Kettle is a type of Pitching Machine
         yield UnknownTimeChangeSource(ChangeSourceType.PITCHING_MACHINE_CREATED,
                                       keys_changed=changed_keys_copy)
 
@@ -716,6 +815,13 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
             after['validFrom'] == '2020-10-18T19:00:01.291576Z'):
         changed_keys.remove('permAttr')
         yield UnknownTimeChangeSource(ChangeSourceType.HALL_STARS_RELEASED,
+                                      keys_changed={'permAttr'})
+
+    # Coffee Cup winners got Perk
+    if (new_mods == {'PERK'} and
+            after['validFrom'].startswith('2020-12-09T00:28:00')):
+        changed_keys.remove('permAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.WON_TOURNAMENT,
                                       keys_changed={'permAttr'})
 
 
@@ -1069,21 +1175,198 @@ def find_discipline_haunt(before: Optional[JsonDict], after: JsonDict,
                                       keys_changed={'permAttr'})
 
 
-def time_str(timestamp: datetime):
-    return timestamp.isoformat().replace('+00:00', 'Z')
+missing_beans = []
 
 
-def find_from_feed(before: JsonDict, after: JsonDict,
-                   changed_keys: Set[str]) -> Iterator[ChangeSource]:
-    timestamp = isoparse(after['validFrom'])
-    events = feed_search(cache_time=None, limit=-1, query={
-        'playerTags': after['entityId'],
-        'before': time_str(timestamp - timedelta(seconds=180)),
-        'after': time_str(timestamp + timedelta(seconds=180)),
-    })
-    for event in events:
-        pass
-        yield None
+def find_coffee_cup_game_mod_change(before: Optional[JsonDict], after: JsonDict,
+                                    changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'gameAttr' not in changed_keys:
+        return
+
+    # In the coffee cup, these were the only game mods, I think
+    assert set(after['data']['gameAttr']).issubset({'TIRED', 'WIRED'})
+    # You could only have at most one at a time, I think
+    assert len(after['data']['gameAttr']) <= 1
+
+    possible_beans = get_events_from_record(coffee_cup_coffee_beans, before)
+
+    if not after['data']['gameAttr']:
+        # Then tired or wired was removed
+        expected_str = " is no longer "
+    elif after['data']['gameAttr'][0] == 'TIRED':
+        # Then tired was added
+        expected_str = " is now Tired"
+    elif after['data']['gameAttr'][0] == 'WIRED':
+        # Then wired was added
+        expected_str = " is now Wired"
+    else:
+        # No other outcomes
+        assert False
+    possible_beans = possible_beans[
+        possible_beans['evt'].str.contains(expected_str)]
+    if len(possible_beans) > 0:
+        bean = possible_beans.iloc[-1]
+        changed_keys.remove('gameAttr')
+        yield GameEventChangeSource(ChangeSourceType.COFFEE_BEAN,
+                                    keys_changed={'gameAttr'},
+                                    season=bean['season'],
+                                    day=bean['day'],
+                                    game=bean['game_id'],
+                                    perceived_at=bean['perceived_at'])
+    else:
+        # There are many missing beans, and no more specific source of time
+        # information that could be used to infer them manually. Just do the
+        # easy(-ish) thing of finding which game it must've been in and use the
+        # Chron time as perceived_at.
+        # TODO Build spreadsheet of season/day/game for the missing beans once
+        #   this list is complete
+        missing_beans.append((after['entityId'], after['validFrom']))
+        changed_keys.remove('gameAttr')
+        yield UnknownTimeChangeSource(ChangeSourceType.COFFEE_BEAN,
+                                      keys_changed={'gameAttr'})
+
+
+def find_coffee_cup_percolation(before: Optional[JsonDict], after: JsonDict,
+                                changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    attr_difference = set(before['data']['permAttr']).symmetric_difference(
+        set(after['data']['permAttr']))
+
+    # Percolation should only add the Percolated mod, and I don't have the
+    # infrastructure to track multiple mods added from disparate effects
+    if attr_difference != {'COFFEE_EXIT'}:
+        return
+
+    possible_percolations = \
+        get_events_from_record(coffee_cup_percolations, before)
+
+    if len(possible_percolations) > 0:
+        bean = possible_percolations.iloc[-1]
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.PERCOLATION,
+                                    keys_changed={'permAttr'},
+                                    season=bean['season'],
+                                    day=bean['day'],
+                                    game=bean['game_id'],
+                                    perceived_at=bean['perceived_at'])
+
+
+def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
+                                changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    # Exactly one time, Sandie Turner used her free refill and gained one of the
+    # Spicy-related mods in one hit. I don't have the infrastructure to track
+    # two mod changes from different effects, and it happened exactly once, so I
+    # hard-code it.
+    if (after['entityId'] == '766dfd1e-11c3-42b6-a167-9b2d568b5dc0' and
+            after['validFrom'] == '2020-12-02T00:22:00.131114Z'):
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.SPICY,
+                                    keys_changed={'permAttr'},
+                                    season=-1, day=12,
+                                    game='4ad14ac7-667b-45e6-a3b6-6965e156704b',
+                                    perceived_at='2020-12-02 00:19:50.620599')
+        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+                                    keys_changed={'permAttr'},
+                                    season=-1, day=12,
+                                    game='4ad14ac7-667b-45e6-a3b6-6965e156704b',
+                                    perceived_at='2020-12-02 00:19:50.620599')
+        return
+
+    attr_difference = set(before['data']['permAttr']).symmetric_difference(
+        set(after['data']['permAttr']))
+
+    # Should only add/remove the COFFEE_RALLY mod
+    if attr_difference != {'COFFEE_RALLY'}:
+        return
+
+    # This is a use-free-refill event, but Patty Fox got a new free refill so
+    # quickly that chron delay places this event after that. It's easier to
+    # hard-code one exception than to try to account for chron delay
+    if (after['entityId'] == '81d7d022-19d6-427d-aafc-031fcb79b29e' and
+            after['validFrom'] == '2020-11-25T01:14:00.379226Z'):
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+                                    keys_changed={'permAttr'},
+                                    season=-1, day=8,
+                                    game='fa398f5e-1ace-47d6-b449-afdf897a14c2',
+                                    perceived_at='2020-11-25 01:11:59.610153')
+        return
+    if (after['entityId'] == 'cf8e152e-2d27-4dcc-ba2b-68127de4e6a4' and
+            after['validFrom'] == '2020-11-25T02:08:00.38368Z'):
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+                                    keys_changed={'permAttr'},
+                                    season=-1, day=9,
+                                    game='1d198794-cbbc-4e7d-bb8f-8fd31a4ec055',
+                                    perceived_at='2020-11-25 02:05:48.611981')
+        return
+
+    if 'COFFEE_RALLY' in after['data']['permAttr']:
+        possible_events = get_events_from_record(coffee_cup_refill_gained,
+                                                 before)
+    else:
+        possible_events = get_events_from_record(coffee_cup_refill_used,
+                                                 before)
+
+    if len(possible_events) > 0:
+        event = possible_events.iloc[-1]
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+                                    keys_changed={'permAttr'},
+                                    season=event['season'],
+                                    day=event['day'],
+                                    game=event['game_id'],
+                                    perceived_at=event['perceived_at'])
+
+
+def find_coffee_cup_triple_threat(before: Optional[JsonDict], after: JsonDict,
+                                  changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if 'permAttr' not in changed_keys:
+        return
+
+    attr_difference = set(before['data']['permAttr']).symmetric_difference(
+        set(after['data']['permAttr']))
+
+    # Should only add/remove the TRIPLE_THREAT mod
+    if attr_difference != {'TRIPLE_THREAT'}:
+        return
+
+    if 'TRIPLE_THREAT' in after['data']['permAttr']:
+        possible_events = get_events_from_record(coffee_cup_gain_triple_threat,
+                                                 before)
+    else:
+        possible_events = get_events_from_record(coffee_cup_lose_triple_threat,
+                                                 before)
+
+    if len(possible_events) > 0:
+        event = possible_events.iloc[-1]
+        changed_keys.remove('permAttr')
+        yield GameEventChangeSource(ChangeSourceType.TRIPLE_THREAT,
+                                    keys_changed={'permAttr'},
+                                    season=event['season'],
+                                    day=event['day'],
+                                    game=event['game_id'],
+                                    perceived_at=event['perceived_at'])
+
+
+def find_delayed_star_recalculation(_: Optional[JsonDict], after: JsonDict,
+                                    changed_keys: Set[str]) \
+        -> Iterator[ChangeSource]:
+    if (delayed_star_changed_keys := changed_keys.intersection(
+            delayed_updates[after['entityId']])):
+        changed_keys.difference_update(delayed_star_changed_keys)
+        yield UnknownTimeChangeSource(
+            ChangeSourceType.DELAYED_STAR_RECALCULATION,
+            keys_changed=delayed_star_changed_keys)
 
 
 CHANGE_FINDERS = [
@@ -1109,6 +1392,9 @@ CHANGE_FINDERS = [
     find_fateless_fated,
     find_interview,
 
+    # Feed finder handles nearly every user-visible change after discipline
+    find_from_feed,
+
     # Discipline scheduled events
     find_discipline_election,
     find_discipline_postseason_birth,  # must be before idolboard_mod
@@ -1131,6 +1417,13 @@ CHANGE_FINDERS = [
     find_discipline_magmatic,
     find_discipline_haunt,
 
-    # Feed finder handles everything(?) after discipline
-    find_from_feed,
+    # Coffee cup
+    find_coffee_cup_game_mod_change,
+    find_coffee_cup_percolation,
+    find_coffee_cup_free_refill,
+    find_coffee_cup_triple_threat,
+
+    # These ones should only account for changes that aren't explained by
+    # anything else
+    find_delayed_star_recalculation,
 ]
