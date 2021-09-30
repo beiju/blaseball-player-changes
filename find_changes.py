@@ -578,7 +578,7 @@ def find_creeping_peanuts(before: Optional[JsonDict], after: JsonDict,
                       "was un-allergized twice")
             creeping_peanut[after['entityId']] = False
             yield UnknownTimeChangeSource(
-                ChangeSourceType.CREEPING_PEANUT_DEALLERGIZE, {'peanutAllergy'})
+                ChangeSourceType.CREEPING_PEANUT_ALLERGY_REMOVED, {'peanutAllergy'})
 
 
 def find_fateless_fated(before: Optional[JsonDict], after: JsonDict,
@@ -627,8 +627,8 @@ def find_from_feed(before: JsonDict, after: JsonDict,
     timestamp = isoparse(after['validFrom'])
     events = feed_search(cache_time=None, limit=-1, query={
         'playerTags': after['entityId'],
-        'before': time_str(timestamp - timedelta(seconds=180)),
-        'after': time_str(timestamp + timedelta(seconds=180)),
+        'before': after['validFrom'],
+        'after': time_str(timestamp - timedelta(seconds=180)),
     })
     for event in events:
         pass
@@ -754,7 +754,7 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
     if ('ritual' in changed_keys and 'permAttr' in after['data']
             and 'RECEIVER' in after['data']['permAttr']):
         changed_keys.remove('ritual')
-        yield UnknownTimeChangeSource(ChangeSourceType.RECEIVER_RITUALS,
+        yield UnknownTimeChangeSource(ChangeSourceType.MICROPHONE_SPEAKING,
                                       keys_changed={'ritual'})
 
     # Did they maybe have to add more players to the hall or something?
@@ -908,7 +908,7 @@ def find_discipline_feedback_fate(before: Optional[JsonDict], after: JsonDict,
             after['validFrom'] in DAY_X_FEEDBACKS):
         changed_keys.remove('fate')
         yield GameEventChangeSource(
-            ChangeSourceType.FEEDBACK_FATE, keys_changed={'fate'},
+            ChangeSourceType.FEEDBACK, keys_changed={'fate'},
             season=9, day=-1, game='9bb560d9-4925-4845-ad03-26012742ee23',
             perceived_at=DAY_X_FEEDBACKS[after['validFrom']])
         return
@@ -924,7 +924,7 @@ def find_discipline_feedback_fate(before: Optional[JsonDict], after: JsonDict,
     if len(possible_feedbacks) > 0:
         changed_keys.discard('fate')
         feedback = possible_feedbacks.iloc[-1]
-        yield GameEventChangeSource(ChangeSourceType.FEEDBACK_FATE,
+        yield GameEventChangeSource(ChangeSourceType.FEEDBACK,
                                     keys_changed={'fate'},
                                     season=feedback['season'],
                                     day=feedback['day'],
@@ -1083,7 +1083,7 @@ def find_discipline_unshelling(before: Optional[JsonDict], after: JsonDict,
                 changed_keys.remove('permAttr')
 
             unshelling = possible_unshellings.iloc[0]
-            yield GameEventChangeSource(ChangeSourceType.UNSHELLING,
+            yield GameEventChangeSource(ChangeSourceType.UNSHELLED_BY_BIRDS,
                                         keys_changed=unshelling_changed_keys,
                                         season=unshelling['season'],
                                         day=unshelling['day'],
@@ -1208,7 +1208,7 @@ def find_coffee_cup_game_mod_change(before: Optional[JsonDict], after: JsonDict,
     if len(possible_beans) > 0:
         bean = possible_beans.iloc[-1]
         changed_keys.remove('gameAttr')
-        yield GameEventChangeSource(ChangeSourceType.COFFEE_BEAN,
+        yield GameEventChangeSource(ChangeSourceType.COFFEE_BEANED,
                                     keys_changed={'gameAttr'},
                                     season=bean['season'],
                                     day=bean['day'],
@@ -1223,7 +1223,7 @@ def find_coffee_cup_game_mod_change(before: Optional[JsonDict], after: JsonDict,
         #   this list is complete
         missing_beans.append((after['entityId'], after['validFrom']))
         changed_keys.remove('gameAttr')
-        yield UnknownTimeChangeSource(ChangeSourceType.COFFEE_BEAN,
+        yield UnknownTimeChangeSource(ChangeSourceType.COFFEE_BEANED,
                                       keys_changed={'gameAttr'})
 
 
@@ -1247,7 +1247,7 @@ def find_coffee_cup_percolation(before: Optional[JsonDict], after: JsonDict,
     if len(possible_percolations) > 0:
         bean = possible_percolations.iloc[-1]
         changed_keys.remove('permAttr')
-        yield GameEventChangeSource(ChangeSourceType.PERCOLATION,
+        yield GameEventChangeSource(ChangeSourceType.PERCOLATED,
                                     keys_changed={'permAttr'},
                                     season=bean['season'],
                                     day=bean['day'],
@@ -1273,7 +1273,7 @@ def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
                                     season=-1, day=12,
                                     game='4ad14ac7-667b-45e6-a3b6-6965e156704b',
                                     perceived_at='2020-12-02 00:19:50.620599')
-        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+        yield GameEventChangeSource(ChangeSourceType.USED_FREE_REFILL,
                                     keys_changed={'permAttr'},
                                     season=-1, day=12,
                                     game='4ad14ac7-667b-45e6-a3b6-6965e156704b',
@@ -1293,7 +1293,7 @@ def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
     if (after['entityId'] == '81d7d022-19d6-427d-aafc-031fcb79b29e' and
             after['validFrom'] == '2020-11-25T01:14:00.379226Z'):
         changed_keys.remove('permAttr')
-        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+        yield GameEventChangeSource(ChangeSourceType.USED_FREE_REFILL,
                                     keys_changed={'permAttr'},
                                     season=-1, day=8,
                                     game='fa398f5e-1ace-47d6-b449-afdf897a14c2',
@@ -1302,7 +1302,7 @@ def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
     if (after['entityId'] == 'cf8e152e-2d27-4dcc-ba2b-68127de4e6a4' and
             after['validFrom'] == '2020-11-25T02:08:00.38368Z'):
         changed_keys.remove('permAttr')
-        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+        yield GameEventChangeSource(ChangeSourceType.USED_FREE_REFILL,
                                     keys_changed={'permAttr'},
                                     season=-1, day=9,
                                     game='1d198794-cbbc-4e7d-bb8f-8fd31a4ec055',
@@ -1312,14 +1312,16 @@ def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
     if 'COFFEE_RALLY' in after['data']['permAttr']:
         possible_events = get_events_from_record(coffee_cup_refill_gained,
                                                  before)
+        event_source_type = ChangeSourceType.GAINED_FREE_REFILL
     else:
         possible_events = get_events_from_record(coffee_cup_refill_used,
                                                  before)
+        event_source_type = ChangeSourceType.USED_FREE_REFILL
 
     if len(possible_events) > 0:
         event = possible_events.iloc[-1]
         changed_keys.remove('permAttr')
-        yield GameEventChangeSource(ChangeSourceType.FREE_REFILL,
+        yield GameEventChangeSource(event_source_type,
                                     keys_changed={'permAttr'},
                                     season=event['season'],
                                     day=event['day'],
@@ -1343,14 +1345,16 @@ def find_coffee_cup_triple_threat(before: Optional[JsonDict], after: JsonDict,
     if 'TRIPLE_THREAT' in after['data']['permAttr']:
         possible_events = get_events_from_record(coffee_cup_gain_triple_threat,
                                                  before)
+        event_source_type = ChangeSourceType.GAINED_TRIPLE_THREAT
     else:
         possible_events = get_events_from_record(coffee_cup_lose_triple_threat,
                                                  before)
+        event_source_type = ChangeSourceType.LOST_TRIPLE_THREAT
 
     if len(possible_events) > 0:
         event = possible_events.iloc[-1]
         changed_keys.remove('permAttr')
-        yield GameEventChangeSource(ChangeSourceType.TRIPLE_THREAT,
+        yield GameEventChangeSource(event_source_type,
                                     keys_changed={'permAttr'},
                                     season=event['season'],
                                     day=event['day'],
@@ -1406,7 +1410,7 @@ CHANGE_FINDERS = [
     find_discipline_incin_replacement,
     find_discipline_incin_victim,
     partial(find_discipline_simple_event,
-            ChangeSourceType.PEANUT, PEANUT_ATTRS, discipline_peanuts),
+            ChangeSourceType.PEANUT_REACTION, PEANUT_ATTRS, discipline_peanuts),
     find_discipline_feedback_fate,
     find_discipline_blooddrain,
     find_discipline_weekly_mod_change,

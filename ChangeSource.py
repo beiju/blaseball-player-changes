@@ -63,7 +63,7 @@ class ChangeSourceType(Enum):
     CREEPING_PEANUT_ALLERGY = auto()
 
     # This is when some peanut allergies were manually fixed
-    CREEPING_PEANUT_DEALLERGIZE = auto()
+    CREEPING_PEANUT_ALLERGY_REMOVED = auto()
 
     # For a while after the Season 2 election, which introduced Peanuts, players
     # who had a fate of 0 spontaneously gained a new fate. This was a bug that
@@ -74,7 +74,7 @@ class ChangeSourceType(Enum):
     MANUAL = auto()
 
     # Players eat peanuts sometimes, often inadvisedly
-    PEANUT = auto()
+    PEANUT_REACTION = auto()
 
     # In the discipline era players weren't generated with coffee, blood, and
     # rituals (the three attributes added by the Interviews decree). They were
@@ -82,7 +82,7 @@ class ChangeSourceType(Enum):
     INTERVIEW = auto()
 
     # When players get feedbacked, sometimes they change(d?) fate
-    FEEDBACK_FATE = auto()
+    FEEDBACK = auto()
 
     # Very rarely, Reverb weather bestows the Reverberating mod
     REVERBERATING_BESTOWED = auto()
@@ -102,7 +102,7 @@ class ChangeSourceType(Enum):
     UNSTABLE_CHAIN = auto()
 
     # Birds sometimes peck shelled players free
-    UNSHELLING = auto()
+    UNSHELLED_BY_BIRDS = auto()
 
     # If a team needs to play a game but they have no active (i.e. not Shelled,
     # Elsewhere, etc.) pitchers, a Pitching Machine is created and added to
@@ -113,11 +113,11 @@ class ChangeSourceType(Enum):
     SPICY = auto()
 
     # In the Discipline era, or perhaps just because of the Iffey Jr., a failed
-    # incineration resulted in the target gainign stars
+    # incineration resulted in the target gaining stars
     FAILED_INCINERATION = auto()
 
     # The mic spoke to us through the Receivers' rituals
-    RECEIVER_RITUALS = auto()
+    MICROPHONE_SPEAKING = auto()
 
     # For a short time giant peanuts would fall to the ground and exactly once
     # it hit a player, Wyatt Quitter
@@ -166,19 +166,21 @@ class ChangeSourceType(Enum):
     COFFEE_CUP_BIRTH = auto()
 
     # In Coffee 1 weather, players can be Beaned and gain/lose Tired and Wired
-    COFFEE_BEAN = auto()
+    COFFEE_BEANED = auto()
 
     # In the Coffee Cup, players with Observed could be Percolated. This is
     # different to the effect of Observed during the Expansion Era
-    PERCOLATION = auto()
+    PERCOLATED = auto()
 
     # In Coffee 2 weather, players can be Poured Over to gain a Free Refill and
     # then use it to refill an in
-    FREE_REFILL = auto()
+    GAINED_FREE_REFILL = auto()
+    USED_FREE_REFILL = auto()
 
     # In Coffee 3 weather, both starting pitchers gain Triple Threat. They then
     # have a change to lose it at the bottom of the 3rd inning in every game
-    TRIPLE_THREAT = auto()
+    GAINED_TRIPLE_THREAT = auto()
+    LOST_TRIPLE_THREAT = auto()
 
     # When Inter Xpresso won the Coffee Cup, their players all gained Perk
     WON_TOURNAMENT = auto()

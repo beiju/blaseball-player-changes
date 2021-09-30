@@ -1,3 +1,5 @@
+from collections import Counter
+
 from blaseball_mike.chronicler import paged_get_lazy
 
 from ChangeSource import ChangeSourceType
@@ -19,7 +21,10 @@ def main():
         'order': 'asc',
     }, session))
 
+    counter = Counter()
+
     for i, val in enumerate(outputs):
+        counter.update(s.source_type for s in val.sources)
         val.sources = [s for s in val.sources
                        if s.source_type not in IGNORED_EVENTS]
         if not val.sources:
