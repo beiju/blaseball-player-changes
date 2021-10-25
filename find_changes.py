@@ -1,6 +1,8 @@
 import re
 from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import timedelta, datetime
+from enum import Enum
 from functools import partial
 from typing import List, Optional, Set, Iterator
 
@@ -16,8 +18,12 @@ from ChangeSource import ChangeSource, ChangeSourceType, \
     EndseasonChangeSource, GameEndChangeSource
 
 # CHRON_START_DATE = '2020-09-13T19:20:00Z'
+from find_feed_changes import FEED_CHANGE_FINDERS
+
 CHRON_START_DATE = '2020-07-29T08:12:22'
 FEED_START_DATE = '2021-03-01T03:37:36+00:00'
+
+MOD_ATTRIBUTES = {'permAttr', 'seasAttr', 'weekAttr', 'gameAttr'}
 
 NEGATIVE_ATTRS = {'tragicness', 'patheticism'}
 PARTY_ATTRS = {'thwackability', 'buoyancy', 'musclitude', 'continuation',
@@ -151,14 +157,30 @@ DAY_X_FEEDBACKS = {
 }
 
 
-def get_keys_changed(before: Optional[dict], after: dict) -> Set[str]:
+def get_change_description(before: Optional[dict], after: dict) \
+        -> ChangeDescription:
     if before is None:
-        return set(after['data'].keys())
+        return ChangeDescription(new_player=True)
 
-    a = after['data']
-    b = before['data']
-    return {key for key in set(a.keys()).union(set(b.keys()))
-            if key not in a or key not in b or a[key] != b[key]}
+    before_keys = set(before['data'].keys())
+    after_keys = set(after['data'].keys())
+
+    change = ChangeDescription()
+    change.attributes_added = after_keys - before_keys
+    change.attributes_removed = before_keys - after_keys
+    change.attributes_changed = {key for key in before_keys.union(after_keys)
+                                 if before['data'][key] != after['data'][key]
+                                 and key not in MOD_ATTRIBUTES}
+
+    for mod_duration in MOD_ATTRIBUTES:
+        mods_before = set(before['data'][mod_duration])
+        mods_after = set(after['data'][mod_duration])
+        change.mods_added.update({Mod(name, ModDuration(mod_duration))
+                                  for name in mods_after - mods_before})
+        change.mods_removed.update({Mod(name, ModDuration(mod_duration))
+                                    for name in mods_before - mods_after})
+
+    return change
 
 
 def get_change(after):
@@ -166,10 +188,10 @@ def get_change(after):
     prev_for_player[after['entityId']] = after
 
     sources: List[ChangeSource] = []
-    changed_keys = get_keys_changed(before, after)
+    pending_changes = get_change_description(before, after)
 
     for change_finder in CHANGE_FINDERS:
-        for source in change_finder(before, after, changed_keys):
+        for source in change_finder(before, after, pending_changes):
             # Source should be derived from ChangeSource but not the base type
             assert isinstance(source, ChangeSource)
             assert not type(source) is ChangeSource
@@ -179,11 +201,11 @@ def get_change(after):
             delayed_updates[after['entityId']].difference_update(
                 source.keys_changed)
 
-        if not changed_keys:
+        if not pending_changes:
             return Change(before, after, sources)
 
     return Change(before, after, [
-        UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, changed_keys)
+        UnknownTimeChangeSource(ChangeSourceType.UNKNOWN, pending_changes)
     ])
     raise RuntimeError("Can't identify change")
 
@@ -578,7 +600,8 @@ def find_creeping_peanuts(before: Optional[JsonDict], after: JsonDict,
                       "was un-allergized twice")
             creeping_peanut[after['entityId']] = False
             yield UnknownTimeChangeSource(
-                ChangeSourceType.CREEPING_PEANUT_ALLERGY_REMOVED, {'peanutAllergy'})
+                ChangeSourceType.CREEPING_PEANUT_ALLERGY_REMOVED,
+                {'peanutAllergy'})
 
 
 def find_fateless_fated(before: Optional[JsonDict], after: JsonDict,
@@ -631,8 +654,8 @@ def find_from_feed(before: JsonDict, after: JsonDict,
         'after': time_str(timestamp - timedelta(seconds=180)),
     })
     for event in events:
-        pass
-        yield None
+        yield from FEED_CHANGE_FINDERS[event['type']](event, before, after,
+                                                      changed_keys)
 
 
 def find_discipline_election(_: JsonDict, after: JsonDict,

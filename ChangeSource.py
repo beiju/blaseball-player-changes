@@ -1,6 +1,29 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Set
+
+
+class ModDuration(Enum):
+    PERMANENT = 'permAttr'
+    SEASON = 'seasAttr'
+    WEEKLY = 'weekAttr'
+    GAME = 'gameAttr'
+
+
+@dataclass
+class Mod:
+    name: str
+    duration: ModDuration
+
+
+@dataclass
+class ChangeDescription:
+    new_player: bool = field(default=False)
+    attributes_changed: Set[str] = field(default_factory=set)
+    attributes_added: Set[str] = field(default_factory=set)
+    attributes_removed: Set[str] = field(default_factory=set)
+    mods_added: Set[Mod] = field(default_factory=set)
+    mods_removed: Set[Mod] = field(default_factory=set)
 
 
 class ChangeSourceType(Enum):
@@ -189,7 +212,7 @@ class ChangeSourceType(Enum):
 @dataclass
 class ChangeSource:
     source_type: ChangeSourceType
-    keys_changed: Set[str]
+    change: ChangeDescription
 
 
 @dataclass
