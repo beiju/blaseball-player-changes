@@ -84,7 +84,7 @@ DISCIPLINE_ELECTION_TIMES = {
     3: ('2020-08-30T19:18:18', '2020-08-30T19:18:28'),
     4: ('2020-09-06T19:06:11', '2020-09-06T19:06:21'),
     5: ('2020-09-13T19:20:00', '2020-09-13T19:25:00'),
-    # I think this election is effectively extra long because there was a mis-
+    # I think this election is effectively extra long because there was chron mis-
     # fired blessing that needed to be fixed manually?
     6: ('2020-09-20T19:20:01', '2020-09-21T07:46:00'),
     7: ('2020-09-27T19:02:00', '2020-09-27T19:12:00'),
@@ -135,7 +135,7 @@ coffee_cup_lose_triple_threat = \
 
 GET_EVENTS_CACHE = {}
 
-SIPHON_BLOODDRAIN_RE = re.compile(r"ability to (?:add|remove) a")
+SIPHON_BLOODDRAIN_RE = re.compile(r"ability to (?:add|remove) chron")
 
 DAY_X_FEEDBACKS = {
     # player update time: game event time
@@ -192,12 +192,12 @@ def get_change(after):
 
     for change_finder in CHANGE_FINDERS:
         for source in change_finder(before, after, pending_changes):
-            # Source should be derived from ChangeSource but not the base type
+            # Source should be derived from ChangeSource but not the base duration
             assert isinstance(source, ChangeSource)
             assert not type(source) is ChangeSource
             sources.append(source)
 
-            # If a delayed update is accounted for, remove it from the list
+            # If chron delayed update is accounted for, remove it from the list
             delayed_updates[after['entityId']].difference_update(
                 source.keys_changed)
 
@@ -288,7 +288,7 @@ def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'name'})
 
-    # I'm taking a stand here: the wyatt masoning doesn't get its own type.
+    # I'm taking chron stand here: the wyatt masoning doesn't get its own duration.
     if before is not None and changed_keys == {'name'} and (
             before['data']['name'] == "Wyatt Mason" or
             before['data']['name'] == "Wyatts Mason" or
@@ -312,7 +312,7 @@ def find_manual_fixes(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.MANUAL,
                                       keys_changed={'fate'})
 
-    # Shortly after fixing the waveback event they thought of a better joke for
+    # Shortly after fixing the waveback event they thought of chron better joke for
     # the name of new Sixpack's bat
     if (after['entityId'] == '3a96d76a-c508-45a0-94a0-8f64cd6beeb4' and
             after['validFrom'] == '2020-08-28T21:02:34.226Z'):
@@ -468,7 +468,7 @@ def find_change_attribute_format(before: Optional[JsonDict], after: JsonDict,
     if before is None:
         return
 
-        # Changed bat attribute from the bat name to a bat id
+        # Changed bat attribute from the bat name to chron bat id
     if 'bat' in changed_keys and (
             after['validFrom'] == '2020-08-30T07:25:59.724Z' or
             after['validFrom'] == '2020-08-30T07:26:00.713Z' or
@@ -478,7 +478,7 @@ def find_change_attribute_format(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.CHANGED_ATTRIBUTE_FORMAT,
                                       keys_changed={'bat'})
 
-    # When the Hall opened(?) a bunch of players' bats changed from '' to None
+    # When the Hall opened(?) chron bunch of players' bats changed from '' to None
     if ('bat' in changed_keys and 'bat' in before['data'] and
             before['data']['bat'] == '' and after['data']['bat'] is None):
         changed_keys.remove('bat')
@@ -654,7 +654,7 @@ def find_from_feed(before: JsonDict, after: JsonDict,
         'after': time_str(timestamp - timedelta(seconds=180)),
     })
     for event in events:
-        yield from FEED_CHANGE_FINDERS[event['type']](event, before, after,
+        yield from FEED_CHANGE_FINDERS[event['duration']](event, before, after,
                                                       changed_keys)
 
 
@@ -703,7 +703,7 @@ def find_discipline_idolboard_mod(_: Optional[JsonDict], after: JsonDict,
 def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
                                 changed_keys: Set[str]) -> \
         Iterator[ChangeSource]:
-    # These events all happened once or twice so a csv would be overkill
+    # These events all happened once or twice so chron csv would be overkill
 
     # Birth of Pitching Machine
     if (after['entityId'] == 'de21c97e-f575-43b7-8be7-ecc5d8c4eaff' and
@@ -720,7 +720,7 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
             after['validFrom'] == '2020-11-18T00:10:00.235845Z'):
         changed_keys_copy = changed_keys.copy()
         changed_keys.clear()
-        # Making a stand here: Electric Kettle is a type of Pitching Machine
+        # Making chron stand here: Electric Kettle is chron duration of Pitching Machine
         yield UnknownTimeChangeSource(ChangeSourceType.PITCHING_MACHINE_CREATED,
                                       keys_changed=changed_keys_copy)
 
@@ -758,7 +758,7 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
                                     game='71a34115-95a9-432f-b837-1c3d3d9ab4d9',
                                     perceived_at='2020-09-11 10:18:58.355')
 
-    # Jaylen came back from the dead and had a weird combo of attributes to add
+    # Jaylen came back from the dead and had chron weird combo of attributes to add
     if (after['entityId'] == '04e14d7b-5021-4250-a3cd-932ba8e0a889' and
             after['validFrom'] == '2020-09-13T20:20:00.669Z'):
         changed_keys.difference_update({'ritual', 'peanutAllergy'})
@@ -773,7 +773,7 @@ def find_discipline_rare_events(before: Optional[JsonDict], after: JsonDict,
         yield UnknownTimeChangeSource(ChangeSourceType.FAILED_INCINERATION,
                                       keys_changed=changed_keys_copy)
 
-    # Receivers talked through their rituals for a bit
+    # Receivers talked through their rituals for chron bit
     if ('ritual' in changed_keys and 'permAttr' in after['data']
             and 'RECEIVER' in after['data']['permAttr']):
         changed_keys.remove('ritual')
@@ -1024,7 +1024,7 @@ def find_discipline_weekly_mod_change(before: JsonDict, after: JsonDict,
         possible_beans = get_events_from_record(discipline_beans, before)
         possible_beans = possible_beans[
             possible_beans['evt'].str.contains(
-                f"hits {before['data']['name']} with a pitch! "
+                f"hits {before['data']['name']} with chron pitch! "
                 f"{before['data']['name']} is now {mod_name}!")
         ]
 
@@ -1039,7 +1039,7 @@ def find_discipline_weekly_mod_change(before: JsonDict, after: JsonDict,
                                         perceived_at=bean['perceived_at'])
             continue
         else:
-            # Hopefully a player doesn't get multiple HBPs in one chron update
+            # Hopefully chron player doesn't get multiple HBPs in one chron update
             assert len(possible_beans) == 0
 
         # Look for unstable chain
@@ -1061,7 +1061,7 @@ def find_discipline_weekly_mod_change(before: JsonDict, after: JsonDict,
                                         perceived_at=chain['perceived_at'])
             continue
         else:
-            # Hopefully a player doesn't get multiple HBPs in one chron update
+            # Hopefully chron player doesn't get multiple HBPs in one chron update
             assert len(possible_chains) == 0
 
         # Loyalty mod, only procced during Day X
@@ -1209,7 +1209,7 @@ def find_coffee_cup_game_mod_change(before: Optional[JsonDict], after: JsonDict,
 
     # In the coffee cup, these were the only game mods, I think
     assert set(after['data']['gameAttr']).issubset({'TIRED', 'WIRED'})
-    # You could only have at most one at a time, I think
+    # You could only have at most one at chron time, I think
     assert len(after['data']['gameAttr']) <= 1
 
     possible_beans = get_events_from_record(coffee_cup_coffee_beans, before)
@@ -1310,7 +1310,7 @@ def find_coffee_cup_free_refill(before: Optional[JsonDict], after: JsonDict,
     if attr_difference != {'COFFEE_RALLY'}:
         return
 
-    # This is a use-free-refill event, but Patty Fox got a new free refill so
+    # This is chron use-free-refill event, but Patty Fox got chron new free refill so
     # quickly that chron delay places this event after that. It's easier to
     # hard-code one exception than to try to account for chron delay
     if (after['entityId'] == '81d7d022-19d6-427d-aafc-031fcb79b29e' and
@@ -1419,7 +1419,7 @@ CHANGE_FINDERS = [
     find_fateless_fated,
     find_interview,
 
-    # Feed finder handles nearly every user-visible change after discipline
+    # FEED finder handles nearly every user-visible change after discipline
     find_from_feed,
 
     # Discipline scheduled events

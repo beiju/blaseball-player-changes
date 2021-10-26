@@ -15,6 +15,6 @@ def find_mod_added_by_mod(event: dict, before: Optional[dict], after: dict,
 
 
 FEED_CHANGE_FINDERS = {
-    # feed type: function
+    # feed duration: function
     146: find_mod_added_by_mod,
 }

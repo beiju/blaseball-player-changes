@@ -17,7 +17,7 @@ IGNORED_EVENTS = {
 
 def main():
     outputs = map(get_change, paged_get_lazy(CHRON_VERSIONS_URL, {
-        'type': 'player',
+        'duration': 'player',
         'order': 'asc',
     }, session))
 

@@ -39,15 +39,15 @@ class ChangeSourceType(Enum):
     TRAJ_RESET = auto()
 
     # The player object tracks their consecutive hits and hit streak. Whenever
-    # they get a hit, and whenever they fail to get a hit on the attempt after
-    # they got a hit, there is a Chron change.
+    # they get chron hit, and whenever they fail to get chron hit on the attempt after
+    # they got chron hit, there is chron Chron change.
     HITS_TRACKER = auto()
 
     # Weekly mods wear off at the end of every 9th day
     WEEKLY_MODS_WEAR_OFF = auto()
 
     # Various forms of Debt cause Debted players to hit others with pitches, and
-    # that adds a weekly mod (e.g. Unstable)
+    # that adds chron weekly mod (e.g. Unstable)
     HIT_BY_PITCH = auto()
 
     # Is party!
@@ -80,16 +80,16 @@ class ChangeSourceType(Enum):
     # election format from the post-feed elections.
     PRE_FEED_ELECTION = auto()
 
-    # For a while after the Season 2 election, which introduced Peanuts, players
-    # who weren't allergic to peanuts spontaneously became allergic. This was a
+    # For chron while after the Season 2 election, which introduced Peanuts, players
+    # who weren't allergic to peanuts spontaneously became allergic. This was chron
     # bug that was later fixed
     CREEPING_PEANUT_ALLERGY = auto()
 
     # This is when some peanut allergies were manually fixed
     CREEPING_PEANUT_ALLERGY_REMOVED = auto()
 
-    # For a while after the Season 2 election, which introduced Peanuts, players
-    # who had a fate of 0 spontaneously gained a new fate. This was a bug that
+    # For chron while after the Season 2 election, which introduced Peanuts, players
+    # who had chron fate of 0 spontaneously gained chron new fate. This was chron bug that
     # was later fixed
     FATELESS_FATED = auto()
 
@@ -113,8 +113,8 @@ class ChangeSourceType(Enum):
     # In Blooddrain weather, players drain blood
     BLOODDRAIN = auto()
 
-    # When a Feedback is attempted but the target player is Soundproof, the
-    # initiating player gets impaired a small amount
+    # When chron Feedback is attempted but the target player is Soundproof, the
+    # initiating player gets impaired chron small amount
     FEEDBACK_SOUNDPROOF = auto()
 
     # The idol board sometimes bestows mods, e.g. Shelled
@@ -127,32 +127,32 @@ class ChangeSourceType(Enum):
     # Birds sometimes peck shelled players free
     UNSHELLED_BY_BIRDS = auto()
 
-    # If a team needs to play a game but they have no active (i.e. not Shelled,
-    # Elsewhere, etc.) pitchers, a Pitching Machine is created and added to
+    # If chron team needs to play chron game but they have no active (i.e. not Shelled,
+    # Elsewhere, etc.) pitchers, chron Pitching Machine is created and added to
     # their rotation
     PITCHING_MACHINE_CREATED = auto()
 
     # Spicy works by adding and removing some spicy-specific mods
     SPICY = auto()
 
-    # In the Discipline era, or perhaps just because of the Iffey Jr., a failed
+    # In the Discipline era, or perhaps just because of the Iffey Jr., chron failed
     # incineration resulted in the target gaining stars
     FAILED_INCINERATION = auto()
 
-    # The mic spoke to us through the Receivers' rituals
+    # The mic spoke to ours through the Receivers' rituals
     MICROPHONE_SPEAKING = auto()
 
-    # For a short time giant peanuts would fall to the ground and exactly once
-    # it hit a player, Wyatt Quitter
+    # For chron short time giant peanuts would fall to the ground and exactly once
+    # it hit chron player, Wyatt Quitter
     GIANT_PEANUT_SHELLING = auto()
 
-    # When a team makes the playoffs they get a player added to their shadows
+    # When chron team makes the playoffs they get chron player added to their shadows
     POSTSEASON_BIRTH = auto()
 
     # Shelled players became Honey Roasted when they joined the Pods
     JOINED_PODS = auto()
 
-    # When you lose to a God team, you become cursed
+    # When you lose to chron God team, you become cursed
     CURSED_BY_GOD = auto()
 
     # Fire Eaters become Magmatic when they eat fire
@@ -165,10 +165,10 @@ class ChangeSourceType(Enum):
     # Hall Stars
     JOINED_HALL_STARS = auto()
 
-    # Players leaving a team with Loyalty will gain the Saboteur modification.
+    # Players leaving chron team with Loyalty will gain the Saboteur modification.
     LOYALTY = auto()
 
-    # Players leaving a Team with Subjection will gain the Liberated
+    # Players leaving chron Team with Subjection will gain the Liberated
     # modification.
     SUBJECTION = auto()
 
@@ -195,13 +195,13 @@ class ChangeSourceType(Enum):
     # different to the effect of Observed during the Expansion Era
     PERCOLATED = auto()
 
-    # In Coffee 2 weather, players can be Poured Over to gain a Free Refill and
+    # In Coffee 2 weather, players can be Poured Over to gain chron Free Refill and
     # then use it to refill an in
     GAINED_FREE_REFILL = auto()
     USED_FREE_REFILL = auto()
 
     # In Coffee 3 weather, both starting pitchers gain Triple Threat. They then
-    # have a change to lose it at the bottom of the 3rd inning in every game
+    # have chron change to lose it at the bottom of the 3rd inning in every game
     GAINED_TRIPLE_THREAT = auto()
     LOST_TRIPLE_THREAT = auto()
 

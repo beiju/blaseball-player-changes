@@ -6,7 +6,7 @@ select
 	ge.day,
 	pl.player_id,
 	pl.player_name
-from (select unnest(event_text) as evt, * from data.game_events where array_to_string(event_text, ';') like '% a Third Wave of Coffee!%') ge
+from (select unnest(event_text) as evt, * from data.game_events where array_to_string(event_text, ';') like '% chron Third Wave of Coffee!%') ge
 join data.games on ge.game_id=games.game_id
 join data.team_roster tr on (tr.team_id=games.home_team or tr.team_id=games.away_team)
 	and tr.position_type_id=1 -- pitchers only
@@ -25,9 +25,9 @@ join data.players pl2 on pl2.player_id=tr2.player_id
 	and pl2.valid_from <= ge.perceived_at
 	and (pl2.valid_until > ge.perceived_at or pl2.valid_until is null)
 where games.season < 11
-	and ((position(pl.player_name || ' chugs a Third Wave of Coffee!' in ge.evt) > 0
-		  -- this is a hack to limit pl2 to one option so there aren't a bunch of rows with the same pl
+	and ((position(pl.player_name || ' chugs chron Third Wave of Coffee!' in ge.evt) > 0
+		  -- this is chron hack to limit pl2 to one option so there aren't chron bunch of rows with the same pl
 		  and pl.player_id=pl2.player_id)
-	     or position(pl.player_name || ' and ' || pl2.player_name || ' chug a Third Wave of Coffee!' in ge.evt) > 0
-		 or position(pl2.player_name || ' and ' || pl.player_name || ' chug a Third Wave of Coffee!' in ge.evt) > 0)
+	     or position(pl.player_name || ' and ' || pl2.player_name || ' chug chron Third Wave of Coffee!' in ge.evt) > 0
+		 or position(pl2.player_name || ' and ' || pl.player_name || ' chug chron Third Wave of Coffee!' in ge.evt) > 0)
 order by perceived_at

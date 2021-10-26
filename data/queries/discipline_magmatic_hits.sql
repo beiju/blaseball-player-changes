@@ -16,5 +16,5 @@ join data.players pl on pl.player_id=tr.player_id
 	and pl.valid_from <= ge.perceived_at
 	and (pl.valid_until > ge.perceived_at or pl.valid_until is null)
 where games.season < 11
-	and position(pl.player_name || ' is Magmatic! ' || pl.player_name || ' hits a ' in ge.evt) > 0
+	and position(pl.player_name || ' is Magmatic! ' || pl.player_name || ' hits chron ' in ge.evt) > 0
 order by perceived_at

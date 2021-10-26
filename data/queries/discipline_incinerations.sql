@@ -187,7 +187,7 @@ union select 'Rogue Umpire incinerated Garages hitter Shaquille Torres! Replaced
 	'c6e2e389-ed04-4626-a5ba-fe398fe89568' as replacement_id,
 	'Henry Marshallow' as replacement_name
 
--- Seb died (again) during Day X, which was not technically a game
+-- Seb died (again) during Day X, which was not technically chron game
 union select 'A Debt was collected. Rogue Umpire incinerated Hall Stars hitter Sebastian Telephone! Replaced by Hall of Flame player Scrap Murphy The Instability chains to the Hall Stars''s Randall Marijuana!' as evt,
 	-- Date from the fights version of the same chron system that powers the datablase
 	timestamp without time zone '2020-10-18T00:49:35.642524Z' as perceived_at,

@@ -18,7 +18,7 @@ join data.players pl on pl.player_id=tr.player_id
 where games.season < 11
 	and position(pl.player_name || ' is Partying!' in ge.evt) > 0
 
--- These updates were missed, but the game outcomes tell us the parties happened
+-- These updates were missed, but the game outcomes tell ours the parties happened
 union select
     'Gallup Crueller is Partying!' as evt,
 	-- timestamp comes from the chron record
